@@ -1,34 +1,17 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { AuthModule } from './auth/auth.module';
-import { UserModule } from './user/user.module';
-import { AdminModule } from './admin/admin.module';
-import { MongooseModule } from '@nestjs/mongoose';
+import { ApiModule } from './api/api.module';
 import { ConfigModule } from '@nestjs/config';
+import { RepositoriesModule } from './repositories/repositories.module';
 
 @Module({
   imports: [
-
     ConfigModule.forRoot({
-      isGlobal: true
+      isGlobal: true,
     }),
-
-    MongooseModule.forRootAsync({
-      imports: [ConfigModule],
-      useFactory: () => {
-        return {
-          uri: process.env.MONGODB_URL,
-          connectionFactory: () => {
-          },
-        };
-      },
-    }),
-
-    AuthModule,
-    UserModule,
-    AdminModule
-  ],
+    ApiModule,
+    RepositoriesModule],
   controllers: [AppController],
   providers: [AppService],
 })
