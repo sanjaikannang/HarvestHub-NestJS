@@ -6,6 +6,7 @@ import { LoginResponse } from "src/api/auth/login/login.response";
 import { RegisterRequest } from "src/api/auth/register/register.request";
 import { RegisterResponse } from "src/api/auth/register/register.response";
 import { UserRepositoryService } from "src/repositories/user-repository/user.repository";
+import { UserRole } from "src/utils/enum";
 
 @Injectable()
 export class AuthService {
@@ -22,40 +23,43 @@ export class AuthService {
 
     // Register API Endpoint
     async register(registerRequest: RegisterRequest): Promise<RegisterResponse> {
+
         const { email, password, name, role } = registerRequest;
 
-        // Check if email already exists
+        // 1. Check if email already exists
         const emailExists = await this.userRepository.emailExists(email);
         if (emailExists) {
-            throw new ConflictException('Email already exists');
+            throw new BadRequestException('Email already exists');
         }
 
-        // Validate role
-        if (!['admin', 'farmer', 'buyer'].includes(role)) {
-            throw new BadRequestException('Invalid role. Must be admin, farmer, or buyer');
+        // 2. Allow only farmer and buyer to register
+        const allowedRoles = [UserRole.FARMER, UserRole.BUYER];
+        if (!allowedRoles.includes(role as UserRole)) {
+            throw new BadRequestException('Invalid role. Only Farmer or Buyer can register.');
         }
 
-        // Hash password
+        // 3. Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Create user
+        const roleEnum = role as UserRole;
+
+        // 4. Create user
         const newUser = await this.userRepository.create({
             name,
             email,
             password: hashedPassword,
-            role,
+            role: roleEnum
         });
 
         return {
-            success: true,
+            message: 'User registered successfully',
             user: {
                 id: newUser.id.toString(),
                 name: newUser.name,
                 email: newUser.email,
                 role: newUser.role,
-                createdAt: newUser.createdAt
             },
-            message: 'User registered successfully'
+            
         };
     }
 
@@ -63,6 +67,7 @@ export class AuthService {
 
     // Login API Endpoint
     async login(loginRequest: LoginRequest): Promise<LoginResponse> {
+
         const { email, password } = loginRequest;
 
         // 1. Find user by email

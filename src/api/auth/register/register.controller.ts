@@ -12,8 +12,6 @@ export class RegisterController {
     @Post('register')
     async register(@Body() registerRequest: RegisterRequest): Promise<RegisterResponse> {
 
-        console.log('Register Request:', registerRequest);
-
         return this.authService.register(registerRequest);
 
     }
