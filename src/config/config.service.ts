@@ -23,16 +23,20 @@ export class ConfigService {
         return this.getValue("PORT", true);
     }
 
-    getBaseUrl() {
+    getFrontEndBaseUrl() {
         return this.getValue("FRONT_END_BASE_URL", true);
     }
 
     getMongoDbUri() {
-        const mongoDbUrl = this.getValue("MONGODB_URL", true);
-
-        // console.log("MongoDB URL: ", mongoDbUrl);
-
         return this.getValue("MONGODB_URL");
+    }
+
+    getJWTSecretKey() {
+        return this.getValue("JWT_SECRET_KEY");
+    }
+
+    getJWTExpiresIn(){
+        return this.getValue("JWT_EXPIRES_IN");
     }
 
 

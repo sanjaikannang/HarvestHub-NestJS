@@ -1,14 +1,14 @@
+import { UserRole } from "src/utils/enum";
+
 export class LoginResponse {
     
-    accessToken: string;
+    message: string;
+    token: string;
     user: {
         id: string;
         name: string;
         email: string;
-        role: string;
-        phone?: string;
-        address?: string;
+        role: UserRole;
     };
-    message: string;
     
 }

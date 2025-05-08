@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import * as cors from 'cors';
 import { ConfigService } from './config/config.service';
+import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
 
@@ -9,7 +10,7 @@ async function bootstrap() {
 
   const configService = app.get(ConfigService)
 
-  const baseUrl = configService.getBaseUrl();
+  const baseUrl = configService.getFrontEndBaseUrl();
 
   app.use(cors({
     origin: [
@@ -18,7 +19,15 @@ async function bootstrap() {
     credentials: true,
   }));
 
-  await app.listen(process.env.PORT ?? 8000);
-  
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
+
+  await app.listen(configService.getPort() ?? 8000);
+
 }
 bootstrap();

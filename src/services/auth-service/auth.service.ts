@@ -5,57 +5,58 @@ import { LoginRequest } from "src/api/auth/login/login.request";
 import { LoginResponse } from "src/api/auth/login/login.response";
 import { RegisterRequest } from "src/api/auth/register/register.request";
 import { RegisterResponse } from "src/api/auth/register/register.response";
+import { ConfigService } from "src/config/config.service";
 import { UserRepositoryService } from "src/repositories/user-repository/user.repository";
+import { UserRole } from "src/utils/enum";
 
 @Injectable()
 export class AuthService {
 
-    // Hardcoded JWT secret key
-    private readonly JWT_SECRET = "secret_key_12345";
-    // JWT expiration time (24 hours)
-    private readonly JWT_EXPIRES_IN = "24h";
-
     constructor(
         private readonly userRepository: UserRepositoryService,
+        private readonly configService: ConfigService,
     ) { }
 
 
     // Register API Endpoint
     async register(registerRequest: RegisterRequest): Promise<RegisterResponse> {
+
         const { email, password, name, role } = registerRequest;
 
-        // Check if email already exists
+        // 1. Check if email already exists
         const emailExists = await this.userRepository.emailExists(email);
         if (emailExists) {
-            throw new ConflictException('Email already exists');
+            throw new BadRequestException('Email already exists');
         }
 
-        // Validate role
-        if (!['admin', 'farmer', 'buyer'].includes(role)) {
-            throw new BadRequestException('Invalid role. Must be admin, farmer, or buyer');
+        // 2. Allow only farmer and buyer to register
+        const allowedRoles = [UserRole.FARMER, UserRole.BUYER];
+        if (!allowedRoles.includes(role as UserRole)) {
+            throw new BadRequestException('Invalid role. Only Farmer or Buyer can register.');
         }
 
-        // Hash password
+        // 3. Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Create user
+        const roleEnum = role as UserRole;
+
+        // 4. Create user
         const newUser = await this.userRepository.create({
             name,
             email,
             password: hashedPassword,
-            role,
+            role: roleEnum
         });
 
         return {
-            success: true,
+            message: 'User registered successfully',
             user: {
                 id: newUser.id.toString(),
                 name: newUser.name,
                 email: newUser.email,
                 role: newUser.role,
-                createdAt: newUser.createdAt
             },
-            message: 'User registered successfully'
+
         };
     }
 
@@ -63,48 +64,40 @@ export class AuthService {
 
     // Login API Endpoint
     async login(loginRequest: LoginRequest): Promise<LoginResponse> {
+
         const { email, password } = loginRequest;
 
         // 1. Find user by email
         const user = await this.userRepository.findByEmail(email);
         if (!user) {
-            throw new UnauthorizedException('Invalid email or password');
+            throw new BadRequestException('Invalid email or password');
         }
 
         // 2. Verify password
         const isPasswordValid = await bcrypt.compare(password, user.password);
         if (!isPasswordValid) {
-            throw new UnauthorizedException('Invalid email or password');
+            throw new BadRequestException('Invalid email or password');
         }
 
-        // 3. Generate JWT token directly using jsonwebtoken
+        // 3. Generate JWT token directly using JWT
         const payload = {
             sub: user._id,
             email: user.email,
             role: user.role
         };
 
-        const accessToken = jwt.sign(payload, this.JWT_SECRET, { expiresIn: this.JWT_EXPIRES_IN });
+        const token = jwt.sign(payload, this.configService.getJWTSecretKey(), { expiresIn: this.configService.getJWTExpiresIn() });
 
         return {
-            accessToken,
+            message: 'User login successfully',
+            token,
             user: {
                 id: user.id,
                 name: user.name,
                 email: user.email,
                 role: user.role,
-            },
-            message: 'Login successful'
+            }
         };
-    }
-
-    // Verify token (useful for auth middleware)
-    verifyToken(token: string): any {
-        try {
-            return jwt.verify(token, this.JWT_SECRET);
-        } catch (error) {
-            throw new UnauthorizedException('Invalid token');
-        }
     }
 
 }
