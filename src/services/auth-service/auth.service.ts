@@ -5,19 +5,16 @@ import { LoginRequest } from "src/api/auth/login/login.request";
 import { LoginResponse } from "src/api/auth/login/login.response";
 import { RegisterRequest } from "src/api/auth/register/register.request";
 import { RegisterResponse } from "src/api/auth/register/register.response";
+import { ConfigService } from "src/config/config.service";
 import { UserRepositoryService } from "src/repositories/user-repository/user.repository";
 import { UserRole } from "src/utils/enum";
 
 @Injectable()
 export class AuthService {
 
-    // Hardcoded JWT secret key
-    private readonly JWT_SECRET = "secret_key_12345";
-    // JWT expiration time (24 hours)
-    private readonly JWT_EXPIRES_IN = "24h";
-
     constructor(
         private readonly userRepository: UserRepositoryService,
+        private readonly configService: ConfigService,
     ) { }
 
 
@@ -59,7 +56,7 @@ export class AuthService {
                 email: newUser.email,
                 role: newUser.role,
             },
-            
+
         };
     }
 
@@ -73,43 +70,34 @@ export class AuthService {
         // 1. Find user by email
         const user = await this.userRepository.findByEmail(email);
         if (!user) {
-            throw new UnauthorizedException('Invalid email or password');
+            throw new BadRequestException('Invalid email or password');
         }
 
         // 2. Verify password
         const isPasswordValid = await bcrypt.compare(password, user.password);
         if (!isPasswordValid) {
-            throw new UnauthorizedException('Invalid email or password');
+            throw new BadRequestException('Invalid email or password');
         }
 
-        // 3. Generate JWT token directly using jsonwebtoken
+        // 3. Generate JWT token directly using JWT
         const payload = {
             sub: user._id,
             email: user.email,
             role: user.role
         };
 
-        const accessToken = jwt.sign(payload, this.JWT_SECRET, { expiresIn: this.JWT_EXPIRES_IN });
+        const token = jwt.sign(payload, this.configService.getJWTSecretKey(), { expiresIn: this.configService.getJWTExpiresIn() });
 
         return {
-            accessToken,
+            message: 'User login successfully',
+            token,
             user: {
                 id: user.id,
                 name: user.name,
                 email: user.email,
                 role: user.role,
-            },
-            message: 'Login successful'
+            }
         };
-    }
-
-    // Verify token (useful for auth middleware)
-    verifyToken(token: string): any {
-        try {
-            return jwt.verify(token, this.JWT_SECRET);
-        } catch (error) {
-            throw new UnauthorizedException('Invalid token');
-        }
     }
 
 }

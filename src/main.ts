@@ -27,7 +27,7 @@ async function bootstrap() {
     }),
   );
 
-  await app.listen(process.env.PORT ?? 8000);
+  await app.listen(configService.getPort() ?? 8000);
 
 }
 bootstrap();

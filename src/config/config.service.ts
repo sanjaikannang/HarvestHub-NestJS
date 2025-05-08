@@ -35,5 +35,9 @@ export class ConfigService {
         return this.getValue("JWT_SECRET_KEY");
     }
 
+    getJWTExpiresIn(){
+        return this.getValue("JWT_EXPIRES_IN");
+    }
+
 
 }

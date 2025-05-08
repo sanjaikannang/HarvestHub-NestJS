@@ -5,6 +5,7 @@ import { LoginController } from './login/login.controller';
 import { AuthService } from 'src/services/auth-service/auth.service';
 import { UserRepositoryService } from 'src/repositories/user-repository/user.repository';
 import { RegisterController } from './register/register.controller';
+import { ConfigService } from 'src/config/config.service';
 
 @Module({
     imports: [
@@ -15,10 +16,12 @@ import { RegisterController } from './register/register.controller';
         RegisterController
     ],
     providers: [
+        ConfigService,
         AuthService,
         UserRepositoryService
     ],
     exports: [
+        ConfigService,
         AuthService,
         UserRepositoryService
     ],
