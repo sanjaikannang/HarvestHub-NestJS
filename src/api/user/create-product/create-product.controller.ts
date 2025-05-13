@@ -22,13 +22,13 @@ export class CreateProductController {
     ): Promise<CreateProductResponse> {
 
         // Extract user ID from request object        
-        const currentUserId = request['user'].sub;
+        const userId = request['user'].sub;
 
-        if (!currentUserId) {
+        if (!userId) {
             throw new Error('User ID not found in request');
         }
 
-        return this.createProductService.createProduct(CreateProductRequest, currentUserId);
+        return this.createProductService.createProduct(CreateProductRequest, userId);
 
     }
 }
