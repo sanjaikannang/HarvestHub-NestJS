@@ -23,7 +23,6 @@ export class CreateProductResponse {
         bidEndTime: Date;
         status: ProductStatus;
         shippingStatus: ShippingStatus;
-        createdAt: Date;
     };
 
 }
