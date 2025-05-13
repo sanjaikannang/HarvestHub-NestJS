@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Product, ProductDocument } from "src/schemas/product.schema";
-import { Model, Schema as MongooseSchema } from "mongoose";
+import { Model, Types } from "mongoose";
 import { ProductStatus, ShippingStatus } from "src/utils/enum";
 
 @Injectable()
@@ -16,7 +16,7 @@ export class ProductRepositoryService {
     async createProduct(productData: {
         name: string;
         description: string;
-        farmerId: MongooseSchema.Types.ObjectId;
+        farmerId: Types.ObjectId;
         quantity: {
             value: number;
             unit: string;

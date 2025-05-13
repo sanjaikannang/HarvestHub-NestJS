@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, UnauthorizedException } from "@nestjs/
 import { CreateProductRequest } from "src/api/user/create-product/create-product.request";
 import { CreateProductResponse } from "src/api/user/create-product/create-product.response";
 import { ConfigService } from "src/config/config.service";
-import { Schema as MongooseSchema } from "mongoose";
+import { Types } from "mongoose";
 import { ProductRepositoryService } from "src/repositories/product-repository/product.repository";
 
 @Injectable()
@@ -52,7 +52,7 @@ export class ProductService {
             const createdProduct = await this.productRepository.createProduct({
                 name: createProductRequest.name,
                 description: createProductRequest.description,
-                farmerId: new MongooseSchema.Types.ObjectId(currentUserId),
+                farmerId: new Types.ObjectId(currentUserId), 
                 quantity: createProductRequest.quantity,
                 images: createProductRequest.images,
                 startingPrice: createProductRequest.startingPrice,

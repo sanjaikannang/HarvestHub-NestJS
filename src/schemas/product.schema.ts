@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document, Schema as MongooseSchema } from 'mongoose';
+import { Document, Types } from 'mongoose';
 import { ProductStatus, ShippingStatus } from 'src/utils/enum';
 
 export type ProductDocument = Product & Document;
@@ -13,8 +13,8 @@ export class Product {
     @Prop()
     description: string;
 
-    @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'User', required: true })
-    farmerId: MongooseSchema.Types.ObjectId;
+    @Prop({ type: Types.ObjectId, ref: 'User', required: true })
+    farmerId: Types.ObjectId;
 
     @Prop({
         type: {
@@ -49,8 +49,8 @@ export class Product {
     @Prop()
     currentHighestBid: number;
 
-    @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'User' })
-    currentHighestBidderId: MongooseSchema.Types.ObjectId;
+    @Prop({ type: Types.ObjectId, ref: 'User' })
+    currentHighestBidderId: Types.ObjectId;
 
     @Prop({ enum: ProductStatus, default: ProductStatus.PENDING })
     status: ProductStatus;
@@ -58,8 +58,8 @@ export class Product {
     @Prop()
     adminFeedback: string;
 
-    @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'User' })
-    reviewedBy: MongooseSchema.Types.ObjectId;
+    @Prop({ type: Types.ObjectId, ref: 'User' })
+    reviewedBy: Types.ObjectId;
 
     @Prop()
     reviewedAt: Date;
