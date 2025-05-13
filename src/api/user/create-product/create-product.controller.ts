@@ -21,15 +21,14 @@ export class CreateProductController {
         @Req() request: Request
     ): Promise<CreateProductResponse> {
 
-        // Extract user ID from request object
-        // Assuming your auth guard adds user information to request
-        const currentUserId = request['user'].sub;
+        // Extract user ID from request object        
+        const userId = request['user'].sub;
 
-        if (!currentUserId) {
+        if (!userId) {
             throw new Error('User ID not found in request');
         }
 
-        return this.createProductService.createProduct(CreateProductRequest, currentUserId);
+        return this.createProductService.createProduct(CreateProductRequest, userId);
 
     }
 }

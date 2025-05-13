@@ -20,7 +20,7 @@ export class CreateProductResponse {
         bidEndDate: Date;
         bidStartTime: Date;
         bidEndTime: Date;
-        status: ProductStatus;
+        productStatus: ProductStatus;
         shippingStatus: ShippingStatus;
     };
 
