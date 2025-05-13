@@ -1,6 +1,5 @@
-import { Schema as MongooseSchema } from 'mongoose';
 import { ProductStatus, ShippingStatus } from 'src/utils/enum';
-
+import { Types } from 'mongoose';
 
 export class CreateProductResponse {
 
@@ -10,7 +9,7 @@ export class CreateProductResponse {
         id: string;
         name: string;
         description: string;
-        farmerId: MongooseSchema.Types.ObjectId;
+        farmerId: Types.ObjectId;
         quantity: {
             value: number;
             unit: string;
