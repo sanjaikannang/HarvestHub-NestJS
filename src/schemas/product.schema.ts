@@ -53,7 +53,7 @@ export class Product {
     currentHighestBidderId: Types.ObjectId;
 
     @Prop({ enum: ProductStatus, default: ProductStatus.PENDING })
-    status: ProductStatus;
+    productStatus: ProductStatus;
 
     @Prop()
     adminFeedback: string;

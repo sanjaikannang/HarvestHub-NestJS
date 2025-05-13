@@ -30,7 +30,7 @@ export class ProductRepositoryService {
     }): Promise<ProductDocument> {
         const newProduct = new this.productModel({
             ...productData,
-            status: ProductStatus.PENDING,
+            productStatus: ProductStatus.PENDING,
             shippingStatus: ShippingStatus.NOT_SHIPPED,
             currentHighestBid: productData.startingPrice,
         });

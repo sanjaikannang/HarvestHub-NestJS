@@ -77,7 +77,7 @@ export class ProductService {
                     bidEndDate: createdProduct.bidEndDate,
                     bidStartTime: createdProduct.bidStartTime,
                     bidEndTime: createdProduct.bidEndTime,
-                    status: createdProduct.status,
+                    productStatus: createdProduct.productStatus,
                     shippingStatus: createdProduct.shippingStatus,
                 }
             };
