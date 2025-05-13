@@ -1,4 +1,4 @@
-import { Injectable, CanActivate, ExecutionContext, UnauthorizedException } from '@nestjs/common';
+import { Injectable, CanActivate, ExecutionContext, UnauthorizedException, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import * as jwt from 'jsonwebtoken';
 import { ConfigService } from '../config/config.service';
@@ -52,8 +52,18 @@ export class JwtAuthGuard implements CanActivate {
       }
 
       // Check if user has required role
-      return requiredRoles.includes(payload.role);
+      if (!requiredRoles.includes(payload.role)) {
+        // Custom error message for incorrect roles
+        throw new ForbiddenException(`Access denied: User with role '${payload.role}' is not authorized to access this resource. Required roles: ${requiredRoles.join(', ')}`);
+      }
+
+      return true;
+
     } catch (error) {
+      if (error instanceof ForbiddenException) {
+        // Rethrow our custom ForbiddenException
+        throw error;
+      }
       throw new UnauthorizedException('Invalid token');
     }
   }

@@ -21,8 +21,7 @@ export class CreateProductController {
         @Req() request: Request
     ): Promise<CreateProductResponse> {
 
-        // Extract user ID from request object
-        // Assuming your auth guard adds user information to request
+        // Extract user ID from request object        
         const currentUserId = request['user'].sub;
 
         if (!currentUserId) {
