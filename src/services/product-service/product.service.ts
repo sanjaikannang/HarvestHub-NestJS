@@ -15,7 +15,7 @@ export class ProductService {
 
 
     // Create Product API Endpoint
-    async createProduct(createProductRequest: CreateProductRequest): Promise<CreateProductResponse> {
+    async createProduct(createProductRequest: CreateProductRequest, currentUserId: string): Promise<CreateProductResponse> {
 
         try {
 
@@ -64,19 +64,22 @@ export class ProductService {
 
             // Transform to response object
             const response: CreateProductResponse = {
-                id: createdProduct.id,
-                name: createdProduct.name,
-                description: createdProduct.description,
-                farmerId: createdProduct.farmerId,
-                quantity: createdProduct.quantity,
-                images: createdProduct.images,
-                startingPrice: createdProduct.startingPrice,
-                bidStartDate: createdProduct.bidStartDate,
-                bidEndDate: createdProduct.bidEndDate,
-                bidStartTime: createdProduct.bidStartTime,
-                bidEndTime: createdProduct.bidEndTime,
-                status: createdProduct.status,
-                shippingStatus: createdProduct.shippingStatus,
+                message: "Product created successfully",
+                product: {
+                    id: createdProduct.id,
+                    name: createdProduct.name,
+                    description: createdProduct.description,
+                    farmerId: createdProduct.farmerId,
+                    quantity: createdProduct.quantity,
+                    images: createdProduct.images,
+                    startingPrice: createdProduct.startingPrice,
+                    bidStartDate: createdProduct.bidStartDate,
+                    bidEndDate: createdProduct.bidEndDate,
+                    bidStartTime: createdProduct.bidStartTime,
+                    bidEndTime: createdProduct.bidEndTime,
+                    status: createdProduct.status,
+                    shippingStatus: createdProduct.shippingStatus,
+                }
             };
 
             return response;
@@ -85,7 +88,5 @@ export class ProductService {
             throw new BadRequestException(`Failed to create product: ${error.message}`);
         }
     }
-
-
 
 }
