@@ -5,13 +5,15 @@ import { ConfigService } from 'src/config/config.service';
 import { ProductRepositoryService } from 'src/repositories/product-repository/product.repository';
 import { Product, ProductSchema } from 'src/schemas/product.schema';
 import { ProductService } from 'src/services/product-service/product.service';
+import { GetAllProductController } from './get-all-product/get-all-product.controller';
 
 @Module({
     imports: [
         MongooseModule.forFeature([{ name: Product.name, schema: ProductSchema }]),
     ],
     controllers: [
-        CreateProductController
+        CreateProductController,
+        GetAllProductController
     ],
     providers: [
         ConfigService,
