@@ -4,6 +4,9 @@ import { CreateProductResponse } from "src/api/user/create-product/create-produc
 import { ConfigService } from "src/config/config.service";
 import { Types } from "mongoose";
 import { ProductRepositoryService } from "src/repositories/product-repository/product.repository";
+import { GetAllProductRequest } from "src/api/user/get-all-product/get-all-product.request";
+import { GetAllProductResponse, PaginationInfo } from "src/api/user/get-all-product/get-all-product.response";
+import { ProductStatus } from "src/utils/enum";
 
 @Injectable()
 export class ProductService {
@@ -111,6 +114,108 @@ export class ProductService {
 
         } catch (error) {
             throw new BadRequestException(`Failed to create product: ${error.message}`);
+        }
+    }
+
+
+    // Get All Product API Endpoint
+    async getAllProduct(getAllProductRequest: GetAllProductRequest, userId: string, userRole: string): Promise<GetAllProductResponse> {
+
+        try {
+            const {
+                page = 1,
+                limit = 10,
+                status,
+                search,
+            } = getAllProductRequest;
+
+            // Build filter using repository service
+            const filter = this.productRepository.buildProductFilter(
+                status,
+                search,
+                userRole
+            );
+
+            // Calculate skip value for pagination
+            const skip = (page - 1) * limit;
+
+            // Get total count of products matching the filter
+            const totalProducts = await this.productRepository.countProducts(filter);
+
+            // Get products with pagination
+            const products = await this.productRepository.findProducts(
+                filter,
+                skip,
+                limit
+            );
+
+            // Get farmer names for each product
+            const farmerIds = products.map(product => product.farmerId);
+            const farmers = await this.userModel
+                .find({ _id: { $in: farmerIds } })
+                .select('_id firstName lastName')
+                .lean();
+
+
+            // Create a map of farmer IDs to names
+            const farmerMap = {};
+            farmers.forEach(farmer => {
+                farmerMap[farmer._id.toString()] = `${farmer.firstName} ${farmer.lastName}`;
+            });
+
+            // Count bids for each product
+            const productIds = products.map(product => product._id);
+            const bidCounts = await this.bidModel.aggregate([
+                { $match: { productId: { $in: productIds } } },
+                { $group: { _id: '$productId', count: { $sum: 1 } } }
+            ]);
+
+            // Create a map of product IDs to bid counts
+            const bidCountMap = {};
+            bidCounts.forEach(item => {
+                bidCountMap[item._id.toString()] = item.count;
+            });
+
+
+            // Format products with additional information
+            const formattedProducts = products.map(product => {
+                const productId = product._id.toString();
+                return {
+                    ...product,
+                    _id: productId,
+                    farmerName: farmerMap[product.farmerId.toString()] || 'Unknown Farmer',
+                    bidsCount: bidCountMap[productId] || 0
+                };
+            });
+
+            // Create pagination information using repository method
+            const pagination = this.productRepository.createPaginationInfo(
+                page,
+                limit,
+                totalProducts
+            );
+
+            return {
+                message: "Products fetched successfully",
+                count: formattedProducts.length,
+                pagination,
+                products: formattedProducts
+            };
+
+
+        } catch (error) {
+            return {
+                message: `Error fetching products: ${error.message}`,
+                count: 0,
+                pagination: {
+                    currentPage: 1,
+                    totalPages: 0,
+                    totalProducts: 0,
+                    hasNextPage: false,
+                    hasPrevPage: false
+                },
+                products: [],
+            };
         }
     }
 
