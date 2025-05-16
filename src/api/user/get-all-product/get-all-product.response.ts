@@ -3,7 +3,6 @@ export class ProductResponse {
     name: string;
     description: string;
     farmerId: string;
-    farmerName?: string;  // Populated from User collection
     quantity: {
         value: number;
         unit: string;
@@ -16,8 +15,6 @@ export class ProductResponse {
     bidStartTime: Date;
     bidEndTime: Date;
     productStatus: string;
-    createdAt: Date;
-    updatedAt: Date;
 }
 
 

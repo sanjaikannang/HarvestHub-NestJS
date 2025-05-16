@@ -1,11 +1,11 @@
-import { BadRequestException, Injectable, UnauthorizedException } from "@nestjs/common";
+import { BadRequestException, Injectable } from "@nestjs/common";
 import { CreateProductRequest } from "src/api/user/create-product/create-product.request";
 import { CreateProductResponse } from "src/api/user/create-product/create-product.response";
 import { ConfigService } from "src/config/config.service";
 import { Types } from "mongoose";
 import { ProductRepositoryService } from "src/repositories/product-repository/product.repository";
 import { GetAllProductRequest } from "src/api/user/get-all-product/get-all-product.request";
-import { GetAllProductResponse, PaginationInfo } from "src/api/user/get-all-product/get-all-product.response";
+import { GetAllProductResponse, PaginationInfo, ProductResponse } from "src/api/user/get-all-product/get-all-product.response";
 import { ProductStatus } from "src/utils/enum";
 
 @Injectable()
@@ -122,101 +122,95 @@ export class ProductService {
     async getAllProduct(getAllProductRequest: GetAllProductRequest, userId: string, userRole: string): Promise<GetAllProductResponse> {
 
         try {
-            const {
-                page = 1,
-                limit = 10,
-                status,
-                search,
-            } = getAllProductRequest;
+            // Validate request parameters
+            this.validateGetAllProductRequest(getAllProductRequest);
 
-            // Build filter using repository service
-            const filter = this.productRepository.buildProductFilter(
-                status,
-                search,
-                userRole
-            );
-
-            // Calculate skip value for pagination
+            // Set default pagination values
+            const page = getAllProductRequest.page ? parseInt(getAllProductRequest.page.toString()) : 1;
+            const limit = getAllProductRequest.limit ? parseInt(getAllProductRequest.limit.toString()) : 10;
             const skip = (page - 1) * limit;
 
-            // Get total count of products matching the filter
-            const totalProducts = await this.productRepository.countProducts(filter);
+            // Build the query based on filters
+            const query: any = {};
 
-            // Get products with pagination
-            const products = await this.productRepository.findProducts(
-                filter,
+            // Filter by product status if provided
+            if (getAllProductRequest.productStatus) {
+                query.productStatus = getAllProductRequest.productStatus;
+            }
+
+            // If role is farmer, only show their own products
+            if (userRole === 'Farmer') {
+                query.farmerId = new Types.ObjectId(userId);
+            }
+
+            // If role is buyer, only show products with APPROVED and ACTIVE status
+            if (userRole === 'Buyer') {
+                query.productStatus = { $in: [ProductStatus.APPROVED, ProductStatus.ACTIVE] };
+            }
+
+            const result = await this.productRepository.findProducts(
+                query,
                 skip,
                 limit
             );
 
-            // Get farmer names for each product
-            const farmerIds = products.map(product => product.farmerId);
-            const farmers = await this.userModel
-                .find({ _id: { $in: farmerIds } })
-                .select('_id firstName lastName')
-                .lean();
+            // logic for pagination calculation
+            const totalProducts = result.totalProducts;
+            const totalPages = Math.ceil(totalProducts / limit);
 
-
-            // Create a map of farmer IDs to names
-            const farmerMap = {};
-            farmers.forEach(farmer => {
-                farmerMap[farmer._id.toString()] = `${farmer.firstName} ${farmer.lastName}`;
-            });
-
-            // Count bids for each product
-            const productIds = products.map(product => product._id);
-            const bidCounts = await this.bidModel.aggregate([
-                { $match: { productId: { $in: productIds } } },
-                { $group: { _id: '$productId', count: { $sum: 1 } } }
-            ]);
-
-            // Create a map of product IDs to bid counts
-            const bidCountMap = {};
-            bidCounts.forEach(item => {
-                bidCountMap[item._id.toString()] = item.count;
-            });
-
-
-            // Format products with additional information
-            const formattedProducts = products.map(product => {
-                const productId = product._id.toString();
+            // logic for formatting the products data
+            const formattedProducts = result.products.map(product => {
                 return {
-                    ...product,
-                    _id: productId,
-                    farmerName: farmerMap[product.farmerId.toString()] || 'Unknown Farmer',
-                    bidsCount: bidCountMap[productId] || 0
+                    _id: product._id.toString(),
+                    name: product.name,
+                    description: product.description,
+                    farmerId: product.farmerId._id.toString(),
+                    quantity: product.quantity,
+                    startingPrice: product.startingPrice,
+                    currentHighestBid: product.currentHighestBid,
+                    bidStartDate: product.bidStartDate,
+                    bidEndDate: product.bidEndDate,
+                    bidStartTime: product.bidStartTime,
+                    bidEndTime: product.bidEndTime,
+                    images: product.images,
+                    productStatus: product.productStatus,
                 };
             });
 
-            // Create pagination information using repository method
-            const pagination = this.productRepository.createPaginationInfo(
-                page,
-                limit,
-                totalProducts
-            );
-
-            return {
-                message: "Products fetched successfully",
-                count: formattedProducts.length,
-                pagination,
-                products: formattedProducts
+            // Prepare pagination info
+            const paginationInfo: PaginationInfo = {
+                currentPage: page,
+                totalPages,
+                totalProducts,
+                hasNextPage: page < totalPages,
+                hasPrevPage: page > 1,
             };
 
+            // Construct and return the response
+            return {
+                message: 'Products retrieved successfully',
+                count: formattedProducts.length,
+                pagination: paginationInfo,
+                product: formattedProducts,
+            };
 
         } catch (error) {
-            return {
-                message: `Error fetching products: ${error.message}`,
-                count: 0,
-                pagination: {
-                    currentPage: 1,
-                    totalPages: 0,
-                    totalProducts: 0,
-                    hasNextPage: false,
-                    hasPrevPage: false
-                },
-                products: [],
-            };
+            throw new Error(`Failed to get products: ${error.message}`);
+        }
+
+    }
+
+
+    private validateGetAllProductRequest(request: GetAllProductRequest): void {
+        // Validate page and limit if provided
+        if (request.page && (isNaN(Number(request.page)) || Number(request.page) < 1)) {
+            throw new BadRequestException('Page must be a positive number');
+        }
+
+        if (request.limit && (isNaN(Number(request.limit)) || Number(request.limit) < 1)) {
+            throw new BadRequestException('Limit must be a positive number');
         }
     }
+
 
 }

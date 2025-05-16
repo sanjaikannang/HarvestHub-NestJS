@@ -1,5 +1,5 @@
 import { Type } from "class-transformer";
-import { IsEnum, IsMongoId, IsOptional, IsString, Min } from "class-validator";
+import { IsEnum, IsOptional, IsString, Min } from "class-validator";
 import { ProductStatus } from "src/utils/enum";
 
 export class GetAllProductRequest {
@@ -16,10 +16,6 @@ export class GetAllProductRequest {
 
     @IsOptional()
     @IsEnum(ProductStatus)
-    status?: ProductStatus;   
-
-    @IsOptional()
-    @IsString()
-    search?: string;
+    productStatus?: ProductStatus;
 
 }

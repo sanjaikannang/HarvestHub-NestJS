@@ -1,4 +1,4 @@
-import { Controller, Post, Query, Req, UseGuards } from "@nestjs/common";
+import { Controller, Get, Query, Req, UseGuards } from "@nestjs/common";
 import { ProductService } from "src/services/product-service/product.service";
 import { JwtAuthGuard } from "src/guards/jwt-auth.guard";
 import { GetAllProductRequest } from "./get-all-product.request";
@@ -12,7 +12,7 @@ export class GetAllProductController {
         private readonly productService: ProductService,
     ) { }
 
-    @Post('get-all-product')
+    @Get('get-all-product')
     async createProduct(
         @Query() getAllProductRequest: GetAllProductRequest,
         @Req() request: Request
