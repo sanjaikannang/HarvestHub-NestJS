@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Get, Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { CreateProductController } from './create-product/create-product.controller';
 import { ConfigService } from 'src/config/config.service';
@@ -7,6 +7,9 @@ import { Product, ProductSchema } from 'src/schemas/product.schema';
 import { ProductService } from 'src/services/product-service/product.service';
 import { GetAllProductController } from './get-all-product/get-all-product.controller';
 import { GetSpecificProductController } from './get-specific-product/get-specific-product.controller';
+import { User } from 'src/schemas/user.schema';
+import { UserService } from 'src/services/user-service/user.service';
+import { GetSpecificUserController } from './get-specific-user/get-specific-user.controller';
 
 @Module({
     imports: [
@@ -15,11 +18,13 @@ import { GetSpecificProductController } from './get-specific-product/get-specifi
     controllers: [
         CreateProductController,
         GetAllProductController,
-        GetSpecificProductController
+        GetSpecificProductController,
+        GetSpecificUserController
     ],
     providers: [
         ConfigService,
         ProductService,
+        UserService,
         ProductRepositoryService
     ],
     exports: [],
