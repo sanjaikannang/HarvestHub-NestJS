@@ -57,12 +57,23 @@ export class ProductService {
                 throw new BadRequestException('Bid start date and end date must be at least 1 day apart');
             }
 
+            if (dayDifference > 3) {
+                throw new BadRequestException('Bid start date and end date cannot be more than 3 days apart');
+            }
+
             // Calculate the time difference between bid start and end times in minutes
-            const timeDifferenceMs = bidEndDateTime.getTime() - bidStartDateTime.getTime();
-            const timeDifferenceMinutes = timeDifferenceMs / (1000 * 60);
+            // Only consider the time component, not the date
+            const startTimeInMinutes = startHours * 60 + startMinutes;
+            const endTimeInMinutes = endHours * 60 + endMinutes;
+            const timeDifferenceMinutes = endTimeInMinutes - startTimeInMinutes;
+
+            // If end time is earlier in the day than start time, add 24 hours (1440 minutes)
+            const adjustedTimeDifferenceMinutes = timeDifferenceMinutes < 0
+                ? timeDifferenceMinutes + 1440
+                : timeDifferenceMinutes;
 
             // Validate min bid window (30 minutes)
-            if (timeDifferenceMinutes < 30) {
+            if (adjustedTimeDifferenceMinutes < 30) {
                 throw new BadRequestException('Minimum bidding time window must be at least 30 minutes');
             }
 
