@@ -37,7 +37,7 @@ export class ProductRepositoryService {
 
         return await newProduct.save();
     }
-    
+
 
     // Count Product
     async countProducts(query: any): Promise<number> {
@@ -67,6 +67,15 @@ export class ProductRepositoryService {
             totalProducts,
             products
         };
+    }
+
+
+    // Find a specific product by ID
+    async findProductById(productId: string) {
+        
+        const result = await this.productModel.findById(productId).exec();
+
+        return result;
     }
 
 }
