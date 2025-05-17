@@ -3,6 +3,8 @@ import { GetAllUserRequest } from "src/api/user/get-all-user/get-all-user.reques
 import { GetAllUserResponse, PaginationInfo, UserResponse } from "src/api/user/get-all-user/get-all-user.response";
 import { UserRepositoryService } from "src/repositories/user-repository/user.repository";
 import { Types } from "mongoose";
+import { GetSpecificUserRequest } from "src/api/user/get-specific-user/get-specific-user.request";
+import { GetSpecificUserResponse } from "src/api/user/get-specific-user/get-specific-user.response";
 
 @Injectable()
 export class UserService {
@@ -66,9 +68,36 @@ export class UserService {
 
 
     // Get Specific User API Endpoint
-    async getSpecificUser(getSpecificUserRequest: any): Promise<any> {
+    async getSpecificUser(getSpecificUserRequest: GetSpecificUserRequest): Promise<GetSpecificUserResponse> {
 
+        try {
+            const { userId } = getSpecificUserRequest;
 
+            // Find user by ID
+            const user = await this.userRepository.findById(userId);
+
+            // If user not found, throw an exception
+            if (!user) {
+                throw new BadRequestException(`User with ID ${userId} not found`);
+            }
+
+            // Map user to UserResponse format
+            const userResponse: UserResponse = {
+                _id: (user._id as Types.ObjectId).toString(),
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                createdAt: user.createdAt,
+                updatedAt: user.updatedAt
+            };
+
+            return {
+                message: 'User retrieved successfully',
+                user: [userResponse]
+            };
+        } catch (error) {
+            throw new Error(`Failed to get users: ${error.message}`);
+        }
     }
 
 
