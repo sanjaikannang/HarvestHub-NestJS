@@ -34,4 +34,21 @@ export class UserRepositoryService {
         const count = await this.userModel.countDocuments({ email }).exec();
         return count > 0;
     }
+
+
+    // Find users with pagination and filtering
+    async findUsers(filter: any, skip: number, limit: number): Promise<UserDocument[]> {
+        return this.userModel
+            .find(filter)
+            .sort({ createdAt: -1 }) // Sort by newest first
+            .skip(skip)
+            .limit(limit)
+            .exec();
+    }
+
+
+    // Count total users matching the filter criteria
+    async countUsers(filter: any): Promise<number> {
+        return this.userModel.countDocuments(filter).exec();
+    }
 }
