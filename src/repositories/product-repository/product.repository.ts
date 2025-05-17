@@ -12,7 +12,7 @@ export class ProductRepositoryService {
     ) { }
 
 
-    // Create a new productW
+    // Create a new product
     async createProduct(productData: {
         name: string;
         description: string;
@@ -37,83 +37,35 @@ export class ProductRepositoryService {
 
         return await newProduct.save();
     }
+    
 
-
-    // Count total number of products matching the filter
-    async countProducts(filter: any): Promise<number> {
-        return this.productModel.countDocuments(filter);
+    // Count Product
+    async countProducts(query: any): Promise<number> {
+        return await this.productModel.countDocuments(query);
     }
 
 
-    // Find products with pagination
+    // Find Product
     async findProducts(
-        filter: any,
+        query: any,
         skip: number,
-        limit: number,
-        sort: any = { createdAt: -1 }
-    ): Promise<ProductDocument[]> {
-        return this.productModel
-            .find(filter)
-            .sort(sort)
+        limit: number
+    ) {
+        // Execute count query for pagination info
+        const totalProducts = await this.productModel.countDocuments(query);
+
+        // Execute main query with pagination
+        const products = await this.productModel
+            .find(query)
             .skip(skip)
             .limit(limit)
+            .populate('name')
             .lean();
-    }
 
-
-    // Build filter object for product queries
-    buildProductFilter(
-        status?: ProductStatus,
-        search?: string,
-        userRole?: string
-    ): any {
-        const filter: any = {};
-
-        // Apply status filter based on user role
-        if (userRole !== 'ADMIN') {
-            // For non-admin users, only show APPROVED products
-            filter.productStatus = ProductStatus.APPROVED;
-        } else if (status) {
-            // For admin users, apply status filter if provided
-            filter.productStatus = status;
-        }
-
-        // Add text search
-        if (search) {
-            filter.$or = [
-                { name: { $regex: search, $options: 'i' } },
-                { description: { $regex: search, $options: 'i' } }
-            ];
-        }
-
-        return filter;
-    }
-
-
-    // Find product by ID
-    async findProductById(productId: string): Promise<ProductDocument | null> {
-        return this.productModel.findById(productId).lean();
-    }
-
-
-    // Find products by farmer ID
-    async findProductsByFarmerId(farmerId: string): Promise<ProductDocument[]> {
-        return this.productModel
-            .find({ farmerId: new Types.ObjectId(farmerId) })
-            .lean();
-    }
-
-
-    // Create pagination information
-    createPaginationInfo(currentPage: number, limit: number, totalProducts: number): any {
-        const totalPages = Math.ceil(totalProducts / limit);
-
+        // Return raw data to be processed by service layer
         return {
-            currentPage,
-            totalPages,
             totalProducts,
-            hasNextPage: currentPage < totalPages,
-            hasPrevPage: currentPage > 1
+            products
         };
     }
 
