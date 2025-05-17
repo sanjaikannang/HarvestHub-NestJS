@@ -26,15 +26,9 @@ export class ProductService {
             const bidStartDate = new Date(createProductRequest.bidStartDate);
             const bidEndDate = new Date(createProductRequest.bidEndDate);
 
-            // Parse times and combine with dates
-            const [startHours, startMinutes] = createProductRequest.bidStartTime.split(':').map(Number);
-            const [endHours, endMinutes] = createProductRequest.bidEndTime.split(':').map(Number);
-
-            const bidStartDateTime = new Date(bidStartDate);
-            bidStartDateTime.setHours(startHours, startMinutes);
-
-            const bidEndDateTime = new Date(bidEndDate);
-            bidEndDateTime.setHours(endHours, endMinutes);
+            // Parse full ISO datetime strings
+            const bidStartDateTime = new Date(createProductRequest.bidStartTime);
+            const bidEndDateTime = new Date(createProductRequest.bidEndTime);
 
             const now = new Date();
 
@@ -61,19 +55,25 @@ export class ProductService {
                 throw new BadRequestException('Bid start date and end date cannot be more than 3 days apart');
             }
 
-            // Calculate the time difference between bid start and end times in minutes
-            // Only consider the time component, not the date
-            const startTimeInMinutes = startHours * 60 + startMinutes;
-            const endTimeInMinutes = endHours * 60 + endMinutes;
-            const timeDifferenceMinutes = endTimeInMinutes - startTimeInMinutes;
+            // Verify bidStartTime date falls within the overall bidding window
+            const bidStartTimeDate = bidStartDateTime.toISOString().split('T')[0];
+            if (bidStartTimeDate < bidStartDate.toISOString().split('T')[0] ||
+                bidStartTimeDate > bidEndDate.toISOString().split('T')[0]) {
+                throw new BadRequestException('Bid start time must fall within the overall bidding window');
+            }
 
-            // If end time is earlier in the day than start time, add 24 hours (1440 minutes)
-            const adjustedTimeDifferenceMinutes = timeDifferenceMinutes < 0
-                ? timeDifferenceMinutes + 1440
-                : timeDifferenceMinutes;
+            // Verify bidEndTime date falls within the overall bidding window
+            const bidEndTimeDate = bidEndDateTime.toISOString().split('T')[0];
+            if (bidEndTimeDate < bidStartDate.toISOString().split('T')[0] ||
+                bidEndTimeDate > bidEndDate.toISOString().split('T')[0]) {
+                throw new BadRequestException('Bid end time must fall within the overall bidding window');
+            }
+
+            // Calculate the time difference between bid start and end times in minutes
+            const timeDifferenceMinutes = (bidEndDateTime.getTime() - bidStartDateTime.getTime()) / (1000 * 60);
 
             // Validate min bid window (30 minutes)
-            if (adjustedTimeDifferenceMinutes < 30) {
+            if (timeDifferenceMinutes < 30) {
                 throw new BadRequestException('Minimum bidding time window must be at least 30 minutes');
             }
 
