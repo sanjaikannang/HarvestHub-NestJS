@@ -5,8 +5,10 @@ import { ConfigService } from "src/config/config.service";
 import { Types } from "mongoose";
 import { ProductRepositoryService } from "src/repositories/product-repository/product.repository";
 import { GetAllProductRequest } from "src/api/user/get-all-product/get-all-product.request";
-import { GetAllProductResponse, PaginationInfo, ProductResponse } from "src/api/user/get-all-product/get-all-product.response";
+import { GetAllProductResponse, PaginationInfo } from "src/api/user/get-all-product/get-all-product.response";
 import { ProductStatus } from "src/utils/enum";
+import { GetSpecificProductResponse } from "src/api/user/get-specific-product/get-specific-product.response";
+import { GetSpecificProductRequest } from "src/api/user/get-specific-product/get-specific-product.request";
 
 @Injectable()
 export class ProductService {
@@ -172,7 +174,7 @@ export class ProductService {
             // logic for formatting the products data
             const formattedProducts = result.products.map(product => {
                 return {
-                    _id: product._id.toString(),
+                    _id: (product._id as Types.ObjectId).toString(),
                     name: product.name,
                     description: product.description,
                     farmerId: product.farmerId._id.toString(),
@@ -221,6 +223,57 @@ export class ProductService {
         if (request.limit && (isNaN(Number(request.limit)) || Number(request.limit) < 1)) {
             throw new BadRequestException('Limit must be a positive number');
         }
+    }
+
+
+    // Get Specific Product API Endpoint
+    async getSpecificProduct(getSpecificProductRequest: GetSpecificProductRequest): Promise<GetSpecificProductResponse> {
+
+        const { productId } = getSpecificProductRequest;
+
+        // Validate ObjectId directly in the controller
+        if (!Types.ObjectId.isValid(productId)) {
+            throw new BadRequestException(`Invalid product ID format: ${productId}`);
+        }
+
+        try {
+
+            // Query the database to find the product by ID
+            const product = await this.productRepository.findProductById(productId);
+
+            if (!product) {
+                return {
+                    message: 'Product not found',
+                    product: []
+                };
+            }
+
+            // Transform MongoDB document to ProductResponse format
+            const productResponse = {
+                _id: (product._id as Types.ObjectId).toString(),
+                name: product.name,
+                description: product.description,
+                farmerId: product.farmerId.toString(),
+                quantity: product.quantity,
+                images: product.images,
+                startingPrice: product.startingPrice,
+                currentHighestBid: product.currentHighestBid,
+                bidStartDate: product.bidStartDate,
+                bidEndDate: product.bidEndDate,
+                bidStartTime: product.bidStartTime,
+                bidEndTime: product.bidEndTime,
+                productStatus: product.productStatus
+            };
+
+            return {
+                message: 'Product retrieved successfully',
+                product: [productResponse]
+            };
+
+        } catch (error) {
+            throw new Error(`Failed to retrieve product: ${error.message}`);
+        }
+
     }
 
 

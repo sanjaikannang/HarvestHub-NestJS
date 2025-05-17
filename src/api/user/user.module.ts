@@ -6,6 +6,7 @@ import { ProductRepositoryService } from 'src/repositories/product-repository/pr
 import { Product, ProductSchema } from 'src/schemas/product.schema';
 import { ProductService } from 'src/services/product-service/product.service';
 import { GetAllProductController } from './get-all-product/get-all-product.controller';
+import { GetSpecificProductController } from './get-specific-product/get-specific-product.controller';
 
 @Module({
     imports: [
@@ -13,7 +14,8 @@ import { GetAllProductController } from './get-all-product/get-all-product.contr
     ],
     controllers: [
         CreateProductController,
-        GetAllProductController
+        GetAllProductController,
+        GetSpecificProductController
     ],
     providers: [
         ConfigService,
