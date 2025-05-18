@@ -14,7 +14,7 @@ export class GetSpecificUserController {
     ) { }
 
     @Get('get-specific-user/:userId')
-    async createProduct(
+    async getSpecificUser(
         @Param() getSpecificUserRequest: GetSpecificUserRequest,
         @Req() request: Request
     ): Promise<GetSpecificUserResponse> {

@@ -15,7 +15,7 @@ export class GetLoginUserProductController {
 
     @Roles(UserRole.FARMER, UserRole.BUYER)
     @Get('get-login-user-product')
-    async createProduct(
+    async getLoginUserProduct(
         @Req() request: Request
     ): Promise<GetLoginUserProductResponse> {
 

@@ -5,6 +5,8 @@ import { UserRepositoryService } from "src/repositories/user-repository/user.rep
 import { Types } from "mongoose";
 import { GetSpecificUserRequest } from "src/api/user/get-specific-user/get-specific-user.request";
 import { GetSpecificUserResponse } from "src/api/user/get-specific-user/get-specific-user.response";
+import { DeleteUserRequest } from "src/api/user/delete-user/delete-user.request";
+import { DeleteUserResponse } from "src/api/user/delete-user/delete-user.response";
 
 @Injectable()
 export class UserService {
@@ -98,6 +100,42 @@ export class UserService {
         } catch (error) {
             throw new Error(`Failed to get users: ${error.message}`);
         }
+    }
+
+
+    // Delete User API Endpoint
+    async deleteUser(deleteUserRequest: DeleteUserRequest): Promise<DeleteUserResponse> {
+
+        try {
+
+            // Validate the user ID
+            if (!deleteUserRequest.userId || !Types.ObjectId.isValid(deleteUserRequest.userId)) {
+                throw new BadRequestException('Invalid user ID');
+            }
+
+            // Call repository to delete the user
+            const deletedUser = await this.userRepository.deleteUserById(deleteUserRequest.userId);
+
+            // If no user was found with the provided ID
+            if (!deletedUser) {
+                throw new BadRequestException(`User with ID ${deleteUserRequest.userId} not found`);
+            }
+
+            // Return success response
+            return {
+                message: `User with ID ${deleteUserRequest.userId} has been successfully deleted`
+            };
+
+        } catch (error) {
+
+            // Re-throw NestJS exceptions to maintain their type and status code
+            if (error instanceof BadRequestException) {
+                throw error;
+            }
+
+            throw new Error(`Failed to Delete user: ${error.message}`);
+        }
+
     }
 
 

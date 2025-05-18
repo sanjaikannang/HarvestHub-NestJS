@@ -16,7 +16,7 @@ export class GetAllUserController {
 
     @Roles(UserRole.ADMIN)
     @Get('get-all-user')
-    async createProduct(
+    async getAllUser(
         @Query() getAllUserRequest: GetAllUserRequest,
         @Req() request: Request
     ): Promise<GetAllUserResponse> {

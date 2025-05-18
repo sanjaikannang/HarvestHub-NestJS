@@ -13,7 +13,7 @@ export class GetSpecificProductController {
     ) { }
 
     @Get('get-specific-product/:productId')
-    async createProduct(
+    async getSpecificProduct(
         @Param() getSpecificProductRequest: GetSpecificProductRequest,
         @Req() request: Request
     ): Promise<GetSpecificProductResponse> {
