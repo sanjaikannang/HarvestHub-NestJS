@@ -72,10 +72,41 @@ export class ProductRepositoryService {
 
     // Find a specific product by ID
     async findProductById(productId: string) {
-        
+
         const result = await this.productModel.findById(productId).exec();
 
         return result;
+    }
+
+
+    // Update the product status and admin feedback
+    async reviewProduct(
+        productId: string,
+        status: ProductStatus,
+        adminFeedback: string,
+        adminId: string
+    ): Promise<Product | null> {
+        try {
+            // Only update if product is in PENDING state
+            const updateResult = await this.productModel.findOneAndUpdate(
+                {
+                    _id: new Types.ObjectId(productId),
+                    productStatus: ProductStatus.PENDING  // This ensures we only update products in PENDING state
+                },
+                {
+                    productStatus: status,
+                    adminFeedback: adminFeedback,
+                    reviewedBy: new Types.ObjectId(adminId),
+                    reviewedAt: new Date()
+                },
+                { new: true }
+            ).exec();
+
+            return updateResult;
+
+        } catch (error) {
+            throw new Error(`Error reviewing product: ${error.message}`);
+        }
     }
 
 }
