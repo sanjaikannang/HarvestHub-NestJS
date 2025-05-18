@@ -15,6 +15,7 @@ import { GetAllUserController } from './get-all-user/get-all-user.controller';
 import { ReviewProductController } from './review-product/review-product.controller';
 import { GetLoginUserProductController } from './get-login-user-product/get-login-user-product.controller';
 import { DeleteUserController } from './delete-user/delete-user.controller';
+import { DeleteProductController } from './delete-product/delete-product.controller';
 
 @Module({
     imports: [
@@ -29,7 +30,8 @@ import { DeleteUserController } from './delete-user/delete-user.controller';
         GetAllUserController,
         ReviewProductController,
         GetLoginUserProductController,
-        DeleteUserController
+        DeleteUserController,
+        DeleteProductController
     ],
     providers: [
         ConfigService,

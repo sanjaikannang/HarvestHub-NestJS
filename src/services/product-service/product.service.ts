@@ -12,6 +12,8 @@ import { ReviewProductRequest } from "src/api/user/review-product/review-product
 import { ReviewProductResponse } from "src/api/user/review-product/review-product.response";
 import { GetLoginUserProductResponse } from "src/api/user/get-login-user-product/get-login-user-product.response";
 import { ProductDocument } from "src/schemas/product.schema";
+import { DeleteProductRequest } from "src/api/user/delete-product/delete-product.request";
+import { DeleteProductResponse } from "src/api/user/delete-product/delete-product.response";
 
 @Injectable()
 export class ProductService {
@@ -358,5 +360,48 @@ export class ProductService {
     }
 
 
+    // Delete Product API Endpoint
+    async deleteProduct(deleteProductRequest: DeleteProductRequest, userId: string, userRole: string): Promise<DeleteProductResponse> {
+
+        try {
+
+            const { productId } = deleteProductRequest;
+
+            // Validate product ID
+            if (!productId || !Types.ObjectId.isValid(productId)) {
+                throw new BadRequestException('Invalid product ID');
+            }
+
+            // Find the product first to check ownership
+            const product = await this.productRepository.findProductById(productId);
+
+            if (!product) {
+                throw new BadRequestException('Product not found');
+            }
+
+            // Check if FARMER is trying to delete someone else's product
+            if (userRole === UserRole.FARMER && product.farmerId.toString() !== userId) {
+                throw new BadRequestException('You do not have permission to delete this product');
+            }
+
+            // Delete the product
+            await this.productRepository.deleteProduct(productId);
+
+            return {
+                message: 'Product deleted successfully'
+            };
+
+        } catch (error) {
+
+            // Re-throw NestJS exceptions to maintain their type and status code
+            if (error instanceof BadRequestException) {
+                throw error;
+            }
+
+            throw new BadRequestException(`Failed to delete product: ${error.message}`);
+
+        }
+
+    }
 
 }

@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Product, ProductDocument } from "src/schemas/product.schema";
 import { Model, Types } from "mongoose";
@@ -119,6 +119,22 @@ export class ProductRepositoryService {
     // Find Product By Buyer ID
     async findProductsByHighestBidderId(bidderId: Types.ObjectId): Promise<ProductDocument[]> {
         return this.productModel.find({ currentHighestBidderId: bidderId }).exec();
+    }
+
+
+    // Delete Product
+    async deleteProduct(productId: string): Promise<ProductDocument> {
+        if (!Types.ObjectId.isValid(productId)) {
+            throw new NotFoundException('Invalid product ID');
+        }
+
+        const deletedProduct = await this.productModel.findByIdAndDelete(productId);
+
+        if (!deletedProduct) {
+            throw new NotFoundException(`Product with ID ${productId} not found`);
+        }
+
+        return deletedProduct;
     }
 
 }
