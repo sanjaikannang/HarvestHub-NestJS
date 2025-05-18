@@ -14,6 +14,7 @@ import { User, UserSchema } from 'src/schemas/user.schema';
 import { GetAllUserController } from './get-all-user/get-all-user.controller';
 import { ReviewProductController } from './review-product/review-product.controller';
 import { GetLoginUserProductController } from './get-login-user-product/get-login-user-product.controller';
+import { DeleteUserController } from './delete-user/delete-user.controller';
 
 @Module({
     imports: [
@@ -27,7 +28,8 @@ import { GetLoginUserProductController } from './get-login-user-product/get-logi
         GetSpecificUserController,
         GetAllUserController,
         ReviewProductController,
-        GetLoginUserProductController
+        GetLoginUserProductController,
+        DeleteUserController
     ],
     providers: [
         ConfigService,

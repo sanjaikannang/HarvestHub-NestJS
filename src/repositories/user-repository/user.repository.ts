@@ -51,4 +51,11 @@ export class UserRepositoryService {
     async countUsers(filter: any): Promise<number> {
         return this.userModel.countDocuments(filter).exec();
     }
+
+
+    // Delete User
+    async deleteUserById(userId: string): Promise<UserDocument | null> {
+        return this.userModel.findByIdAndDelete(userId).exec();
+    }
+
 }

@@ -16,16 +16,16 @@ export class ReviewProductController {
 
     @Roles(UserRole.ADMIN)
     @Post('review-product/:productId')
-    async createProduct(
+    async reviewProduct(
         @Param('productId') productId: string,
         @Body() reviewProductRequest: ReviewProductRequest,
         @Req() request: Request
     ): Promise<ReviewProductResponse> {
 
         // Extract user ID from request object        
-        const adminId  = request['user'].sub;
+        const adminId = request['user'].sub;
 
-        if (!adminId ) {
+        if (!adminId) {
             throw new
                 Error('User ID not found in request');
         }
@@ -33,7 +33,7 @@ export class ReviewProductController {
         // Combine productId from path with the rest of the request body
         reviewProductRequest.productId = productId;
 
-        return this.productService.reviewProduct(reviewProductRequest, adminId );
+        return this.productService.reviewProduct(reviewProductRequest, adminId);
 
     }
 

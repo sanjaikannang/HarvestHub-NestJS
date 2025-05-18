@@ -13,7 +13,7 @@ export class GetAllProductController {
     ) { }
 
     @Get('get-all-product')
-    async createProduct(
+    async getAllProduct(
         @Query() getAllProductRequest: GetAllProductRequest,
         @Req() request: Request
     ): Promise<GetAllProductResponse> {
