@@ -1,7 +1,6 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
 import { CreateProductRequest } from "src/api/user/create-product/create-product.request";
 import { CreateProductResponse } from "src/api/user/create-product/create-product.response";
-import { ConfigService } from "src/config/config.service";
 import { Types } from "mongoose";
 import { ProductRepositoryService } from "src/repositories/product-repository/product.repository";
 import { GetAllProductRequest } from "src/api/user/get-all-product/get-all-product.request";
@@ -9,12 +8,13 @@ import { GetAllProductResponse, PaginationInfo } from "src/api/user/get-all-prod
 import { ProductStatus } from "src/utils/enum";
 import { GetSpecificProductResponse } from "src/api/user/get-specific-product/get-specific-product.response";
 import { GetSpecificProductRequest } from "src/api/user/get-specific-product/get-specific-product.request";
+import { ReviewProductRequest } from "src/api/user/review-product/review-product.request";
+import { ReviewProductResponse } from "src/api/user/review-product/review-product.response";
 
 @Injectable()
 export class ProductService {
 
     constructor(
-        private readonly configService: ConfigService,
         private readonly productRepository: ProductRepositoryService,
     ) { }
 
@@ -276,5 +276,48 @@ export class ProductService {
 
     }
 
+
+    // Review Product API Endpoint
+    async reviewProduct(reviewProductRequest: ReviewProductRequest, adminId: string): Promise<ReviewProductResponse> {
+
+        try {
+
+            // Check if product exists and hasn't been reviewed yet
+            const product = await this.productRepository.findProductById(reviewProductRequest.productId);
+            if (!product) {
+                throw new BadRequestException(`Product with ID ${reviewProductRequest.productId} not found`);
+            }
+
+            // Validate request
+            if (reviewProductRequest.status === ProductStatus.REJECTED && !reviewProductRequest.adminFeedback) {
+                throw new BadRequestException('Admin feedback is required when rejecting a product');
+            }
+
+            // Check if the product has already been reviewed
+            if (product.productStatus !== ProductStatus.PENDING) {
+                throw new BadRequestException(`Product has already been reviewed with status: ${product.productStatus}`);
+            }
+
+            // Update product status only if it's in PENDING state
+            const updatedProduct = await this.productRepository.reviewProduct(
+                reviewProductRequest.productId,
+                reviewProductRequest.status,
+                reviewProductRequest.adminFeedback || '',
+                adminId
+            );
+
+            if (!updatedProduct) {
+                throw new BadRequestException('Product not found or already reviewed');
+            }
+
+            return {
+                message: `Product ${reviewProductRequest.status === ProductStatus.APPROVED ? 'approved' : 'rejected'} successfully`,
+                product: updatedProduct
+            };
+
+        } catch (error) {
+            throw new BadRequestException(`Failed to review product: ${error.message}`);
+        }
+    }
 
 }
