@@ -109,4 +109,16 @@ export class ProductRepositoryService {
         }
     }
 
+
+    // Find Products by Farmer ID
+    async findProductsByFarmerId(farmerId: Types.ObjectId): Promise<ProductDocument[]> {
+        return this.productModel.find({ farmerId }).exec();
+    }
+
+
+    // Find Product By Buyer ID
+    async findProductsByHighestBidderId(bidderId: Types.ObjectId): Promise<ProductDocument[]> {
+        return this.productModel.find({ currentHighestBidderId: bidderId }).exec();
+    }
+
 }

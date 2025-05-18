@@ -13,6 +13,7 @@ import { UserRepositoryService } from 'src/repositories/user-repository/user.rep
 import { User, UserSchema } from 'src/schemas/user.schema';
 import { GetAllUserController } from './get-all-user/get-all-user.controller';
 import { ReviewProductController } from './review-product/review-product.controller';
+import { GetLoginUserProductController } from './get-login-user-product/get-login-user-product.controller';
 
 @Module({
     imports: [
@@ -25,7 +26,8 @@ import { ReviewProductController } from './review-product/review-product.control
         GetSpecificProductController,
         GetSpecificUserController,
         GetAllUserController,
-        ReviewProductController
+        ReviewProductController,
+        GetLoginUserProductController
     ],
     providers: [
         ConfigService,

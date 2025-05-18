@@ -5,11 +5,13 @@ import { Types } from "mongoose";
 import { ProductRepositoryService } from "src/repositories/product-repository/product.repository";
 import { GetAllProductRequest } from "src/api/user/get-all-product/get-all-product.request";
 import { GetAllProductResponse, PaginationInfo } from "src/api/user/get-all-product/get-all-product.response";
-import { ProductStatus } from "src/utils/enum";
+import { ProductStatus, UserRole } from "src/utils/enum";
 import { GetSpecificProductResponse } from "src/api/user/get-specific-product/get-specific-product.response";
 import { GetSpecificProductRequest } from "src/api/user/get-specific-product/get-specific-product.request";
 import { ReviewProductRequest } from "src/api/user/review-product/review-product.request";
 import { ReviewProductResponse } from "src/api/user/review-product/review-product.response";
+import { GetLoginUserProductResponse } from "src/api/user/get-login-user-product/get-login-user-product.response";
+import { ProductDocument } from "src/schemas/product.schema";
 
 @Injectable()
 export class ProductService {
@@ -319,5 +321,42 @@ export class ProductService {
             throw new BadRequestException(`Failed to review product: ${error.message}`);
         }
     }
+
+
+    // Get Login User Product API Endpoint
+    async getLoginUserProduct(userId: string, userRole: string): Promise<GetLoginUserProductResponse> {
+
+        try {
+
+            const userObjectId = new Types.ObjectId(userId);
+            let products: ProductDocument[] = [];
+
+            // Query based on user role
+            if (userRole === UserRole.FARMER) {
+                // For farmers, find products they created
+                products = await this.productRepository.findProductsByFarmerId(userObjectId);
+            } else if (userRole === UserRole.BUYER) {
+                // For buyers, find products where they are the highest bidder
+                products = await this.productRepository.findProductsByHighestBidderId(userObjectId);
+            }
+
+            if (products.length === 0) {
+                return {
+                    message: `No products found for ${userRole.toLowerCase()}`,
+                    products: []
+                };
+            }
+
+            return {
+                message: 'Products retrieved successfully',
+                products: products
+            };
+
+        } catch (error) {
+            throw new BadRequestException(`Failed to retrieve user products: ${error.message}`);
+        }
+    }
+
+
 
 }
