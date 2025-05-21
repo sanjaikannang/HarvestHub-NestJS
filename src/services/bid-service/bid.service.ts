@@ -9,7 +9,7 @@ export class BidService {
 
 
     // Place Bid API endpoint
-    async placeBid(placeBidRequest: PlaceBidRequest, userId: string): Promise<PlaceBidResponse> {
+    async placeBid() {
 
         try {
             const { productId, bidderId, bidAmount } = createBidDto;
@@ -89,9 +89,9 @@ export class BidService {
 
 
     //
-    async getBidsForProduct() {
+    // async getBidsForProduct() {
 
-    }
+    // }
 
 
     async getAuctionState(productId: string) {
@@ -157,100 +157,100 @@ export class BidService {
         };
     }
 
-    async getBidsForProduct(productId: string) {
-        return this.bidModel
-            .find({ productId: new Types.ObjectId(productId) })
-            .sort({ bidAmount: -1 })
-            .populate('bidderId', 'name email')
-            .exec();
-    }
+    // async getBidsForProduct(productId: string) {
+    //     return this.bidModel
+    //         .find({ productId: new Types.ObjectId(productId) })
+    //         .sort({ bidAmount: -1 })
+    //         .populate('bidderId', 'name email')
+    //         .exec();
+    // }
 
-    async getUserBids(userId: string) {
-        return this.bidModel
-            .find({ bidderId: new Types.ObjectId(userId) })
-            .sort({ bidTime: -1 })
-            .populate({
-                path: 'productId',
-                select: 'name images currentHighestBid currentHighestBidderId bidEndDate',
-            })
-            .exec();
-    }
+    // async getUserBids(userId: string) {
+    //     return this.bidModel
+    //         .find({ bidderId: new Types.ObjectId(userId) })
+    //         .sort({ bidTime: -1 })
+    //         .populate({
+    //             path: 'productId',
+    //             select: 'name images currentHighestBid currentHighestBidderId bidEndDate',
+    //         })
+    //         .exec();
+    // }
 
-    async getFarmerProductBids(farmerId: string) {
-        // First, get all products by this farmer
-        const farmerProducts = await this.productModel
-            .find({ farmerId: new Types.ObjectId(farmerId) })
-            .select('_id');
+    // async getFarmerProductBids(farmerId: string) {
+    //     // First, get all products by this farmer
+    //     const farmerProducts = await this.productModel
+    //         .find({ farmerId: new Types.ObjectId(farmerId) })
+    //         .select('_id');
 
-        const productIds = farmerProducts.map(product => product._id);
+    //     const productIds = farmerProducts.map(product => product._id);
 
-        // Then get bids for those products
-        return this.bidModel
-            .find({ productId: { $in: productIds } })
-            .sort({ bidTime: -1 })
-            .populate('bidderId', 'name email')
-            .populate('productId', 'name images currentHighestBid bidEndDate')
-            .exec();
-    }
+    //     // Then get bids for those products
+    //     return this.bidModel
+    //         .find({ productId: { $in: productIds } })
+    //         .sort({ bidTime: -1 })
+    //         .populate('bidderId', 'name email')
+    //         .populate('productId', 'name images currentHighestBid bidEndDate')
+    //         .exec();
+    // }
 
-    async endAuction(productId: string) {
-        const product = await this.productModel.findById(productId);
-        if (!product) {
-            throw new NotFoundException('Product not found');
-        }
+    // async endAuction(productId: string) {
+    //     const product = await this.productModel.findById(productId);
+    //     if (!product) {
+    //         throw new NotFoundException('Product not found');
+    //     }
 
-        // Check if there's a winning bid
-        if (product.currentHighestBid && product.currentHighestBidderId) {
-            // Update product status
-            product.productStatus = ProductStatus.SOLD;
-            await product.save();
+    //     // Check if there's a winning bid
+    //     if (product.currentHighestBid && product.currentHighestBidderId) {
+    //         // Update product status
+    //         product.productStatus = ProductStatus.SOLD;
+    //         await product.save();
 
-            // Update winning bid
-            await this.bidModel.findOneAndUpdate(
-                {
-                    productId: new Types.ObjectId(productId),
-                    bidderId: product.currentHighestBidderId
-                },
-                { isWinningBid: true }
-            );
+    //         // Update winning bid
+    //         await this.bidModel.findOneAndUpdate(
+    //             {
+    //                 productId: new Types.ObjectId(productId),
+    //                 bidderId: product.currentHighestBidderId
+    //             },
+    //             { isWinningBid: true }
+    //         );
 
-            return {
-                status: 'completed',
-                winningBid: product.currentHighestBid,
-                winnerId: product.currentHighestBidderId,
-            };
-        } else {
-            // No bids were placed
-            product.productStatus = ProductStatus.NO_BIDS;
-            await product.save();
+    //         return {
+    //             status: 'completed',
+    //             winningBid: product.currentHighestBid,
+    //             winnerId: product.currentHighestBidderId,
+    //         };
+    //     } else {
+    //         // No bids were placed
+    //         product.productStatus = ProductStatus.NO_BIDS;
+    //         await product.save();
 
-            return {
-                status: 'completed',
-                winningBid: null,
-                winnerId: null,
-                message: 'No bids were placed for this auction'
-            };
-        }
-    }
+    //         return {
+    //             status: 'completed',
+    //             winningBid: null,
+    //             winnerId: null,
+    //             message: 'No bids were placed for this auction'
+    //         };
+    //     }
+    // }
 
-    // Scheduled job to automatically end auctions
-    async checkAndEndExpiredAuctions() {
-        const now = new Date();
+    // // Scheduled job to automatically end auctions
+    // async checkAndEndExpiredAuctions() {
+    //     const now = new Date();
 
-        // Find all products where auction has ended but status is still pending
-        const expiredAuctions = await this.productModel.find({
-            bidEndDate: { $lt: now },
-            productStatus: ProductStatus.APPROVED,
-        });
+    //     // Find all products where auction has ended but status is still pending
+    //     const expiredAuctions = await this.productModel.find({
+    //         bidEndDate: { $lt: now },
+    //         productStatus: ProductStatus.APPROVED,
+    //     });
 
-        console.log(`Found ${expiredAuctions.length} expired auctions to process`);
+    //     console.log(`Found ${expiredAuctions.length} expired auctions to process`);
 
-        for (const auction of expiredAuctions) {
-            await this.endAuction(auction._id.toString());
-        }
+    //     for (const auction of expiredAuctions) {
+    //         await this.endAuction(auction._id.toString());
+    //     }
 
-        return `Processed ${expiredAuctions.length} expired auctions`;
-    }
+    //     return `Processed ${expiredAuctions.length} expired auctions`;
+    // }
 
 
 }
