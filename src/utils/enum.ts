@@ -26,6 +26,7 @@ export enum BidStatus {
   WON = 'WON',
   LOST = 'LOST',
   CANCELLED = 'CANCELLED',
+  CLOSED = 'CLOSED'
 }
 
 export enum PaymentStatus {
