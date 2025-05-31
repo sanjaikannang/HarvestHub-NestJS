@@ -12,10 +12,10 @@ import * as jwt from 'jsonwebtoken';
 import { UserRole } from 'src/utils/enum';
 import { BidService } from '../bid-service/bid.service';
 import { UserService } from '../user-service/user.service';
-import { PlaceBidRequest } from 'src/api/bid/place-bid/place-bid.request';
 import { ProductRepositoryService } from 'src/repositories/product-repository/product.repository';
 import { ConfigService } from 'src/config/config.service';
 import { UserRepositoryService } from 'src/repositories/user-repository/user.repository';
+import { PlaceBidRequest } from 'src/api/bid/place-bid/place-bid.request';
 
 interface JwtPayloadWithRole extends jwt.JwtPayload {
     role: UserRole;
