@@ -100,4 +100,49 @@ export class AuthService {
         };
     }
 
+
+
+    // Verify JWT Token
+    async verifyToken(token: string): Promise<User | null> {
+        try {
+            // Get the JWT secret from environment variables
+            const jwtSecret = process.env.JWT_SECRET;
+
+            if (!jwtSecret) {
+                console.error('JWT_SECRET is not defined in environment variables');
+                return null;
+            }
+
+            // Verify the token manually
+            const payload = jwt.verify(token, jwtSecret) as jwt.JwtPayload;
+
+            // Extract the user ID from the payload
+            const userId = payload.sub || payload.userId;
+
+            if (!userId) {
+                return null;
+            }
+
+            // Find the user in the database
+            const user = await this.userModel.findById(userId);
+
+            if (!user) {
+                return null;
+            }
+
+            // Check if the token has been invalidated (e.g., user logged out)
+            if (user.invalidatedTokens && user.invalidatedTokens.includes(token)) {
+                return null;
+            }
+
+            // Return the user document
+            return user;
+        } catch (error) {
+            // If token verification fails, return null
+            console.error('Token verification failed:', error.message);
+            return null;
+        }
+    }
+
+
 }
