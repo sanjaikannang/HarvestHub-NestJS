@@ -10,11 +10,13 @@ async function bootstrap() {
 
   const configService = app.get(ConfigService)
 
-  const baseUrl = configService.getFrontEndBaseUrl();
+  const baseUrl1 = configService.getFrontEndBaseUrl1();
+  const baseUrl2 = configService.getFrontEndBaseUrl2();
 
   app.use(cors({
     origin: [
-      baseUrl
+      baseUrl1,
+      baseUrl2
     ],
     credentials: true,
   }));

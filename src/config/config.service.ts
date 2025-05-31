@@ -23,8 +23,12 @@ export class ConfigService {
         return this.getValue("PORT", true);
     }
 
-    getFrontEndBaseUrl() {
-        return this.getValue("FRONT_END_BASE_URL", true);
+    getFrontEndBaseUrl1() {
+        return this.getValue("FRONT_END_BASE_URL_1", true);
+    }
+
+    getFrontEndBaseUrl2() {
+        return this.getValue("FRONT_END_BASE_URL_2", true);
     }
 
     getMongoDbUri() {
