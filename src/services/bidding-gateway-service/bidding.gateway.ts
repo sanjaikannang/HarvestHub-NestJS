@@ -25,8 +25,11 @@ interface JwtPayloadWithRole extends jwt.JwtPayload {
 
 @WebSocketGateway({
     cors: {
-        origin: '*',
+        origin: ['https://harvest-hub-v2-mu.vercel.app', 'http://localhost:5173'],
+        credentials: true
     },
+    allowEIO3: true, // Allow Engine.IO v3 clients
+    transports: ['websocket', 'polling']
 })
 
 export class BiddingGateway implements OnGatewayConnection, OnGatewayDisconnect {

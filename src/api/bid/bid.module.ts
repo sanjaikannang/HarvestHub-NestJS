@@ -9,6 +9,7 @@ import { UserRepositoryService } from 'src/repositories/user-repository/user.rep
 import { Product, ProductSchema } from 'src/schemas/product.schema';
 import { UserService } from 'src/services/user-service/user.service';
 import { User, UserSchema } from 'src/schemas/user.schema';
+import { BiddingGateway } from 'src/services/bidding-gateway-service/bidding.gateway';
 
 @Module({
     imports: [
@@ -24,7 +25,8 @@ import { User, UserSchema } from 'src/schemas/user.schema';
         UserService,
         BidRepositoryService,
         ProductRepositoryService,
-        UserRepositoryService
+        UserRepositoryService,
+        BiddingGateway
     ],
     exports: [
         ConfigService,
@@ -32,7 +34,8 @@ import { User, UserSchema } from 'src/schemas/user.schema';
         UserService,
         BidRepositoryService,
         ProductRepositoryService,
-        UserRepositoryService
+        UserRepositoryService,
+        BiddingGateway
     ],
 })
 
