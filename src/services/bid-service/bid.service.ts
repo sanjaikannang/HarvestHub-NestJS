@@ -4,13 +4,17 @@ import { ProductRepositoryService } from "src/repositories/product-repository/pr
 import { BidStatus, ProductStatus } from "src/utils/enum";
 import { Types } from 'mongoose';
 import { PlaceBidResponse } from "src/api/bid/place-bid/place-bid.response";
+import { GetAllBidsResponse } from "src/api/bid/get-all-bids/get-all-bids.response";
+import { UserRepositoryService } from "src/repositories/user-repository/user.repository";
+import { GetAllBidsRequest } from "src/api/bid/get-all-bids/get-all-bids.request";
 
 @Injectable()
 export class BidService {
 
     constructor(
         private readonly productRepositoryService: ProductRepositoryService,
-        private readonly bidRepositoryService: BidRepositoryService
+        private readonly bidRepositoryService: BidRepositoryService,
+        private readonly userRepositoryService: UserRepositoryService
     ) { }
 
 
@@ -135,11 +139,88 @@ export class BidService {
 
 
     // Get All Bids by Product ID
-    async getAllBidsByProductId(productId: string) {
+    async getAllBidsByProductId(productId: string, queryParams: GetAllBidsRequest = {}) {
         try {
+            // Validate product exists
+            const product = await this.productRepositoryService.findProductById(productId);
+            if (!product) {
+                throw new BadRequestException('Product not found');
+            }
+
+            // Set default pagination values
+            const page = queryParams.page || 1;
+            const limit = queryParams.limit || 10;
+            const sortBy = queryParams.sortBy || 'bidTime';
+            const sortOrder = queryParams.sortOrder || 'desc';
+            const bidStatus = queryParams.bidStatus;
+
+            // Build filter object
+            const filter: any = { productId: new Types.ObjectId(productId) };
+            if (bidStatus) {
+                filter.bidStatus = bidStatus;
+            }
+
+            // Build sort object
+            const sort: any = {};
+            sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
+
+            // Get bids with pagination
+            const { bids, totalCount } = await this.bidRepositoryService.findBidsByProductIdWithPagination(
+                filter,
+                page,
+                limit,
+                sort
+            );
+
+            // Calculate pagination info
+            const totalPages = Math.ceil(totalCount / limit);
+            const hasNext = page < totalPages;
+            const hasPrevious = page > 1;
+
+            // Format response
+            const formattedBids = await Promise.all(
+                bids.map(async (bid: any) => {
+                    // Optional: Get bidder details
+                    let bidderName: string | undefined = undefined;
+                    if (this.userRepositoryService) {
+                        try {
+                            const bidder = await this.userRepositoryService.findById(bid.bidderId.toString());
+                            bidderName = bidder?.name || undefined;
+                        } catch (error) {
+                            // Handle error silently, bidderName will remain undefined
+                        }
+                    }
+
+                    return {
+                        bidId: (bid._id as any).toString(),
+                        productId: bid.productId.toString(),
+                        bidderId: bid.bidderId.toString(),
+                        bidderName,
+                        bidAmount: bid.bidAmount,
+                        bidTime: bid.bidTime,
+                        isWinningBid: bid.isWinningBid,
+                        bidStatus: bid.bidStatus,
+                    };
+                })
+            );
+
+            const response: GetAllBidsResponse = {
+                message: bids.length > 0 ? 'Bids retrieved successfully' : 'No bids found for this product',
+                bids: formattedBids,
+                pagination: {
+                    currentPage: page,
+                    totalPages,
+                    totalBids: totalCount,
+                    hasNext,
+                    hasPrevious,
+                }
+            };
+
+            return response;
 
         } catch (error) {
-
+            console.error('Error getting bids:', error);
+            throw new BadRequestException(`Failed to get bids. ${error.message}`);
         }
     }
 

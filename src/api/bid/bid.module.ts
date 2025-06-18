@@ -9,6 +9,8 @@ import { UserRepositoryService } from 'src/repositories/user-repository/user.rep
 import { Product, ProductSchema } from 'src/schemas/product.schema';
 import { UserService } from 'src/services/user-service/user.service';
 import { User, UserSchema } from 'src/schemas/user.schema';
+import { GetAllBidsController } from './get-all-bids/get-all-bids.controller';
+import { PlaceBidController } from './place-bid/place-bid.controller';
 
 @Module({
     imports: [
@@ -16,7 +18,7 @@ import { User, UserSchema } from 'src/schemas/user.schema';
         MongooseModule.forFeature([{ name: Product.name, schema: ProductSchema }]),
         MongooseModule.forFeature([{ name: User.name, schema: UserSchema }])
     ],
-    controllers: [        
+    controllers: [
     ],
     providers: [
         ConfigService,
@@ -25,6 +27,8 @@ import { User, UserSchema } from 'src/schemas/user.schema';
         BidRepositoryService,
         ProductRepositoryService,
         UserRepositoryService,
+        GetAllBidsController,
+        PlaceBidController
     ],
     exports: [
         ConfigService,
@@ -33,6 +37,8 @@ import { User, UserSchema } from 'src/schemas/user.schema';
         BidRepositoryService,
         ProductRepositoryService,
         UserRepositoryService,
+        GetAllBidsController,
+        PlaceBidController
     ],
 })
 

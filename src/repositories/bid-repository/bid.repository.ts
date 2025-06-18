@@ -62,83 +62,31 @@ export class BidRepositoryService {
     }
 
 
-    // Get recent bids by product ID
-    async getRecentBidsByProductId(productId: string, limit: number = 10): Promise<BidDocument[]> {
+    // Find bids by product ID with pagination
+    async findBidsByProductIdWithPagination(
+        filter: any,
+        page: number,
+        limit: number,
+        sort: any
+    ): Promise<{ bids: any[], totalCount: number }> {
         try {
-            return await this.bidModel
-                .find({ productId: new Types.ObjectId(productId) })
-                .sort({ bidTime: -1 }) // Sort by bidTime in descending order (most recent first)
-                .limit(limit)
-                .populate('bidderId', 'name email') // Optional: populate bidder details
-                .exec();
+            const skip = (page - 1) * limit;
+
+            // Execute both queries in parallel
+            const [bids, totalCount] = await Promise.all([
+                this.bidModel
+                    .find(filter)
+                    .sort(sort)
+                    .skip(skip)
+                    .limit(limit)
+                    .exec(),
+                this.bidModel.countDocuments(filter).exec()
+            ]);
+
+            return { bids, totalCount };
         } catch (error) {
-            console.error('Error getting recent bids:', error);
-            throw new Error('Failed to get recent bids');
-        }
-    }
-
-
-    // Count bids by product ID
-    async countBidsByProductId(productId: string): Promise<number> {
-        try {
-            return await this.bidModel.countDocuments({
-                productId: new Types.ObjectId(productId)
-            });
-        } catch (error) {
-            console.error('Error counting bids:', error);
-            throw new Error('Failed to count bids');
-        }
-    }
-
-
-    // Close non-winning bids
-    async closeNonWinningBids(productId: string): Promise<void> {
-        try {
-            await this.bidModel.updateMany(
-                {
-                    productId: new Types.ObjectId(productId),
-                    isWinningBid: false,
-                    bidStatus: BidStatus.ACTIVE
-                },
-                {
-                    $set: { bidStatus: BidStatus.CLOSED }
-                }
-            );
-        } catch (error) {
-            console.error('Error closing non-winning bids:', error);
-            throw new Error('Failed to close non-winning bids');
-        }
-    }
-
-
-    // Get winning bid for a product
-    async getWinningBid(productId: string): Promise<BidDocument | null> {
-        try {
-            return await this.bidModel
-                .findOne({
-                    productId: new Types.ObjectId(productId),
-                    isWinningBid: true
-                })
-                .populate('bidderId', 'name email')
-                .exec();
-        } catch (error) {
-            console.error('Error getting winning bid:', error);
-            throw new Error('Failed to get winning bid');
-        }
-    }
-
-
-    // Get all bids by user
-    async getBidsByUser(userId: string): Promise<BidDocument[]> {
-        try {
-            return await this.bidModel
-                .find({ bidderId: new Types.ObjectId(userId) })
-                .sort({ bidTime: -1 })
-                .populate('productId', 'name description startingPrice')
-                .exec();
-        } catch (error) {
-            console.error('Error getting user bids:', error);
-            throw new Error('Failed to get user bids');
+            console.error('Error finding bids with pagination:', error);
+            throw error;
         }
     }
 
