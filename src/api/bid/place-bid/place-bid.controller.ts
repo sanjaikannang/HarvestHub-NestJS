@@ -1,0 +1,50 @@
+import { Body, Controller, Param, Post, Req, UseGuards } from "@nestjs/common";
+import { JwtAuthGuard } from "src/guards/jwt-auth.guard";
+import { UserRole } from "src/utils/enum";
+import { Roles } from "src/utils/roles.decorator";
+import { PlaceBidRequest } from "./place-bid.request";
+import { PlaceBidResponse } from "./place-bid.response";
+import { BidService } from "src/services/bid-service/bid.service";
+
+
+@Controller('product')
+@UseGuards(JwtAuthGuard)
+export class PlaceBidController {
+
+    constructor(
+        private readonly bidService: BidService,
+    ) { }
+
+    @Roles(UserRole.BUYER)
+    @Post('place-bid/:productId')
+    async placeBid(
+        @Param('productId') productId: string,
+        @Body() placeBidRequest: PlaceBidRequest,
+        @Req() request: Request
+    ): Promise<PlaceBidResponse> {
+
+        // Extract user ID from request object        
+        const userId = request['user'].sub;
+        const userRole = request['user'].role
+
+        if (!userId) {
+            throw new Error('User ID not found in request');
+        }
+
+        if (!userRole) {
+            throw new Error('User Role not found in request');
+        }
+
+        // Call the service method with proper parameters
+        const result = await this.bidService.placeBid({
+            productId: productId, // Use productId from URL params
+            bidderId: userId,
+            bidAmount: placeBidRequest.bidAmount,
+            bidTime: new Date()
+        });
+
+        return result;
+
+    }
+
+}
