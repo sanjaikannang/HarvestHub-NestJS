@@ -1,10 +1,27 @@
+import { Type } from 'class-transformer';
+import { IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
+
 export class GetAllBidsRequest {
-
-    // Optional query parameters for filtering/pagination
+    
+    @IsOptional()
+    @Type(() => Number)
+    @IsNumber()
     page?: number = 1;
-    limit?: number = 10;
-    sortBy?: 'bidAmount' | 'bidTime' = 'bidTime';
-    sortOrder?: 'asc' | 'desc' = 'desc';
-    bidStatus?: string; // Optional filter by bid status
 
+    @IsOptional()
+    @Type(() => Number)
+    @IsNumber()
+    limit?: number = 10;
+
+    @IsOptional()
+    @IsEnum(['bidAmount', 'bidTime'])
+    sortBy?: 'bidAmount' | 'bidTime' = 'bidTime';
+
+    @IsOptional()
+    @IsEnum(['asc', 'desc'])
+    sortOrder?: 'asc' | 'desc' = 'desc';
+
+    @IsOptional()
+    @IsString()
+    bidStatus?: string;
 }

@@ -15,10 +15,9 @@ export class GetAllBidsController {
     ) { }
 
     @Roles(UserRole.FARMER, UserRole.BUYER, UserRole.ADMIN)
-    @Get(':productId/bids')
+    @Get('/get-all-bids/:productId')
     async getAllBids(
         @Param('productId') productId: string,
-        @Query() query: GetAllBidsRequest
     ): Promise<GetAllBidsResponse> {
 
         // Validate productId
@@ -27,7 +26,7 @@ export class GetAllBidsController {
         }
 
         // Call the service method
-        const result = await this.bidService.getAllBidsByProductId(productId, query);
+        const result = await this.bidService.getAllBidsByProductId(productId);
 
         return result;
     }

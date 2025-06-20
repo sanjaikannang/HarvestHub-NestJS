@@ -101,7 +101,7 @@ export class BidService {
             });
 
             const response: PlaceBidResponse = {
-                message: "Product created successfully",
+                message: "Bid Placed successfully",
                 bid: {
                     bidId: (createdBid._id as Types.ObjectId).toString(),
                     productId: createdBid.productId.toString(),
@@ -139,89 +139,95 @@ export class BidService {
 
 
     // Get All Bids by Product ID
-    async getAllBidsByProductId(productId: string, queryParams: GetAllBidsRequest = {}) {
+    async getAllBidsByProductId(productId: string) {
         try {
-            // Validate product exists
+
             const product = await this.productRepositoryService.findProductById(productId);
+
             if (!product) {
                 throw new BadRequestException('Product not found');
             }
 
-            // Set default pagination values
-            const page = queryParams.page || 1;
-            const limit = queryParams.limit || 10;
-            const sortBy = queryParams.sortBy || 'bidTime';
-            const sortOrder = queryParams.sortOrder || 'desc';
-            const bidStatus = queryParams.bidStatus;
+            const bids = await this.bidRepositoryService.findBidsByProductId({
+                productId: new Types.ObjectId(productId)
+            });
 
-            // Build filter object
-            const filter: any = { productId: new Types.ObjectId(productId) };
-            if (bidStatus) {
-                filter.bidStatus = bidStatus;
-            }
+            const sortedBids = bids.sort((a, b) => new Date(a.bidTime).getTime() - new Date(b.bidTime).getTime());
 
-            // Build sort object
-            const sort: any = {};
-            sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
-
-            // Get bids with pagination
-            const { bids, totalCount } = await this.bidRepositoryService.findBidsByProductIdWithPagination(
-                filter,
-                page,
-                limit,
-                sort
-            );
-
-            // Calculate pagination info
-            const totalPages = Math.ceil(totalCount / limit);
-            const hasNext = page < totalPages;
-            const hasPrevious = page > 1;
-
-            // Format response
             const formattedBids = await Promise.all(
-                bids.map(async (bid: any) => {
-                    // Optional: Get bidder details
+                sortedBids.map(async (bid: any, index: number) => {
                     let bidderName: string | undefined = undefined;
                     if (this.userRepositoryService) {
                         try {
                             const bidder = await this.userRepositoryService.findById(bid.bidderId.toString());
                             bidderName = bidder?.name || undefined;
                         } catch (error) {
-                            // Handle error silently, bidderName will remain undefined
+                            // Ignore errors
                         }
                     }
 
+                    // Get all previous bids by this bidder
+                    const bidderPreviousBids = sortedBids
+                        .slice(0, index)
+                        .filter(prevBid => prevBid.bidderId.toString() === bid.bidderId.toString());
+
+                    // Calculate based on immediate previous bid in auction
+                    const previousBidAmount = index === 0
+                        ? (product.startingPrice || 0)
+                        : sortedBids[index - 1].bidAmount;
+
+                    const incrementAmount = bid.bidAmount - previousBidAmount;
+
                     return {
-                        bidId: (bid._id as any).toString(),
+                        bidId: bid._id.toString(),
                         productId: bid.productId.toString(),
                         bidderId: bid.bidderId.toString(),
                         bidderName,
-                        bidAmount: bid.bidAmount,
+                        bidderInitials: bidderName ? bidderName.split(' ').map(n => n[0]).join('').toUpperCase() : 'UN',
+                        currentBidAmount: bid.bidAmount,
+                        previousBidAmount,
+                        incrementAmount,
                         bidTime: bid.bidTime,
+                        timeAgo: this.getTimeAgo(bid.bidTime), // Helper method for "2 min ago"
                         isWinningBid: bid.isWinningBid,
-                        bidStatus: bid.bidStatus,
+                        bidStatus: bid.bidStatus,                        
                     };
                 })
             );
 
-            const response: GetAllBidsResponse = {
-                message: bids.length > 0 ? 'Bids retrieved successfully' : 'No bids found for this product',
-                bids: formattedBids,
-                pagination: {
-                    currentPage: page,
-                    totalPages,
-                    totalBids: totalCount,
-                    hasNext,
-                    hasPrevious,
-                }
-            };
+            const reversedBids = formattedBids.reverse();            
 
-            return response;
+            return {
+                message: formattedBids.length > 0 ? 'Bids retrieved successfully' : 'No bids found for this product',
+                totalBids: formattedBids.length,
+                highestBid: formattedBids.length > 0 ? reversedBids[0].currentBidAmount : 0,
+                startingPrice: product.startingPrice || 0,
+                bids: reversedBids
+            };
 
         } catch (error) {
             console.error('Error getting bids:', error);
             throw new BadRequestException(`Failed to get bids. ${error.message}`);
         }
+    }
+
+    // Helper method to calculate time ago
+    private getTimeAgo(bidTime: Date): string {
+        const now = new Date();
+        const diffInMs = now.getTime() - new Date(bidTime).getTime();
+        const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+
+        if (diffInMinutes < 1) return 'Just now';
+        if (diffInMinutes === 1) return '1 min ago';
+        if (diffInMinutes < 60) return `${diffInMinutes} min ago`;
+
+        const diffInHours = Math.floor(diffInMinutes / 60);
+        if (diffInHours === 1) return '1 hour ago';
+        if (diffInHours < 24) return `${diffInHours} hours ago`;
+
+        const diffInDays = Math.floor(diffInHours / 24);
+        if (diffInDays === 1) return '1 day ago';
+        return `${diffInDays} days ago`;
     }
 
 }

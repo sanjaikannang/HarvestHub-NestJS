@@ -19,6 +19,8 @@ import { PlaceBidController } from './place-bid/place-bid.controller';
         MongooseModule.forFeature([{ name: User.name, schema: UserSchema }])
     ],
     controllers: [
+        GetAllBidsController,
+        PlaceBidController
     ],
     providers: [
         ConfigService,
@@ -26,9 +28,7 @@ import { PlaceBidController } from './place-bid/place-bid.controller';
         UserService,
         BidRepositoryService,
         ProductRepositoryService,
-        UserRepositoryService,
-        GetAllBidsController,
-        PlaceBidController
+        UserRepositoryService       
     ],
     exports: [
         ConfigService,
@@ -36,9 +36,7 @@ import { PlaceBidController } from './place-bid/place-bid.controller';
         UserService,
         BidRepositoryService,
         ProductRepositoryService,
-        UserRepositoryService,
-        GetAllBidsController,
-        PlaceBidController
+        UserRepositoryService       
     ],
 })
 
