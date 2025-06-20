@@ -4,7 +4,7 @@ export class BidDisplayInfo {
     productId: string;
     bidderId: string;
     bidderName?: string;
-    bidderInitials: string; // For display in avatar (e.g., "RK", "PS", "AP")
+    bidderInitials: string; 
 
     // Amount information for UI display
     currentBidAmount: number;     // ₹95,000 (current bid)
@@ -18,7 +18,7 @@ export class BidDisplayInfo {
     // Status information
     isWinningBid: boolean;
     bidStatus: string;
-    
+
 }
 
 

@@ -166,11 +166,6 @@ export class BidService {
                         }
                     }
 
-                    // Get all previous bids by this bidder
-                    const bidderPreviousBids = sortedBids
-                        .slice(0, index)
-                        .filter(prevBid => prevBid.bidderId.toString() === bid.bidderId.toString());
-
                     // Calculate based on immediate previous bid in auction
                     const previousBidAmount = index === 0
                         ? (product.startingPrice || 0)
