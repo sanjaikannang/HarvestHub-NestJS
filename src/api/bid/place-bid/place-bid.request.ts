@@ -4,6 +4,6 @@ export class PlaceBidRequest {
 
     @IsNumber()
     @IsNotEmpty()
-    bidAmount: number;
+    bidAmount?: number;
 
 }

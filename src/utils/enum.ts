@@ -54,3 +54,8 @@ export enum ChatType {
   FARMER_ADMIN = 'FARMER_ADMIN',
   BUYER_ADMIN = 'BUYER_ADMIN',
 }
+
+export enum BidModeStatus {
+  MANUAL = 'MANUAL',
+  AUTO = 'AUTO',
+}
