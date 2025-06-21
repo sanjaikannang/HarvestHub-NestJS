@@ -16,8 +16,8 @@ export class BidMode {
     @Prop({ type: String, enum: BidModeStatus, default: BidModeStatus.MANUAL })
     bidMode: BidModeStatus;
 
-    @Prop({ type: Number, required: true })
-    autoIncrementAmount: Number
+    @Prop({ type: Number, required: false })
+    autoIncrementAmount?: Number
 
 }
 

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Put, Req, UseGuards } from "@nestjs/common";
+import { Controller, Get, Param, Req, UseGuards } from "@nestjs/common";
 import { JwtAuthGuard } from "src/guards/jwt-auth.guard";
 import { UserRole } from "src/utils/enum";
 import { Roles } from "src/utils/roles.decorator";
@@ -28,6 +28,7 @@ export class GetBidModeController {
         }
 
         const result = await this.bidModeService.getBidMode(userId, productId);
+        
         return result;
     }
 

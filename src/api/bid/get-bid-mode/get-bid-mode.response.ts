@@ -6,9 +6,7 @@ export class GetBidModeResponse {
         userId: string;
         productId: string;
         bidMode: string;
-        autoIncrementAmount?: number;
-        createdAt: Date;
-        updatedAt: Date;
+        autoIncrementAmount?: number;     
     };
 
 }

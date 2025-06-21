@@ -24,4 +24,5 @@ export class GetAllBidsRequest {
     @IsOptional()
     @IsString()
     bidStatus?: string;
+    
 }
