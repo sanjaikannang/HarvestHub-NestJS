@@ -10,6 +10,7 @@ export class PlaceBidResponse {
         bidTime: Date;
         isWinningBid: boolean;
         bidStatus: string;
+        bidType?: string;
     };
 
 }
