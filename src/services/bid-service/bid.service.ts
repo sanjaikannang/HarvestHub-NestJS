@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from "@nestjs/common";
+import { BadRequestException, ForbiddenException, Injectable } from "@nestjs/common";
 import { BidRepositoryService } from "src/repositories/bid-repository/bid.repository";
 import { ProductRepositoryService } from "src/repositories/product-repository/product.repository";
 import { BidModeStatus, BidStatus, ProductStatus } from "src/utils/enum";
@@ -46,15 +46,57 @@ export class BidService {
 
             // Check if auction is active (combining date and time checks)
             const now = new Date();
-            const auctionStart = this.combineDateTime(product.bidStartDate, product.bidStartTime);
-            const auctionEnd = this.combineDateTime(product.bidEndDate, product.bidEndTime);
+            const auctionStart = new Date(product.bidStartTime);
+            const auctionEnd = new Date(product.bidEndTime);
 
-            if (now < auctionStart) {
-                throw new BadRequestException('Auction has not started yet');
+            // Validate auction timing
+            if (isNaN(auctionStart.getTime()) || isNaN(auctionEnd.getTime())) {
+                throw new BadRequestException('Invalid auction timing configuration');
             }
 
-            if (now > auctionEnd) {
-                throw new BadRequestException('Auction has ended');
+            console.log('Current time:', now.toISOString());
+            console.log('Auction start:', auctionStart.toISOString());
+            console.log('Auction end:', auctionEnd.toISOString());
+
+            // Check if auction has not started yet
+            if (now < auctionStart) {
+                const timeUntilStart = Math.ceil((auctionStart.getTime() - now.getTime()) / (1000 * 60)); // minutes
+                const hoursUntilStart = Math.floor(timeUntilStart / 60);
+                const minutesRemaining = timeUntilStart % 60;
+
+                let timeMessage = '';
+                if (hoursUntilStart > 0) {
+                    timeMessage = `${hoursUntilStart} hour${hoursUntilStart > 1 ? 's' : ''} and ${minutesRemaining} minute${minutesRemaining !== 1 ? 's' : ''}`;
+                } else {
+                    timeMessage = `${timeUntilStart} minute${timeUntilStart !== 1 ? 's' : ''}`;
+                }
+
+                throw new BadRequestException(
+                    `Auction has not started yet. It will start in ${timeMessage} at ${auctionStart.toLocaleString()}`
+                );
+            }
+
+            // Check if auction has ended
+            if (now >= auctionEnd) {
+                const timeAfterEnd = Math.ceil((now.getTime() - auctionEnd.getTime()) / (1000 * 60)); // minutes
+                const hoursAfterEnd = Math.floor(timeAfterEnd / 60);
+                const minutesAfterEnd = timeAfterEnd % 60;
+
+                let timeMessage = '';
+                if (hoursAfterEnd > 0) {
+                    timeMessage = `${hoursAfterEnd} hour${hoursAfterEnd > 1 ? 's' : ''} and ${minutesAfterEnd} minute${minutesAfterEnd !== 1 ? 's' : ''}`;
+                } else {
+                    timeMessage = `${timeAfterEnd} minute${timeAfterEnd !== 1 ? 's' : ''}`;
+                }
+
+                throw new BadRequestException(
+                    `Auction has ended ${timeMessage} ago at ${auctionEnd.toLocaleString()}`
+                );
+            }
+
+            // Additional validation: Check if bid time is within auction window
+            if (bidTime < auctionStart || bidTime >= auctionEnd) {
+                throw new BadRequestException('Bid time is outside the auction window');
             }
 
             // Get user's bid mode for this product
@@ -115,11 +157,30 @@ export class BidService {
                 throw new BadRequestException(`Bid amount must be at least the starting price of ${product.startingPrice}`);
             }
 
+            // Calculate previousBidAmount and incrementAmount correctly
+            // previousBidAmount should be the actual previous highest bid, not starting price
+            const previousBidAmount = product.currentHighestBid || null;
+            let incrementAmount: number | null = null;
+
+            // Calculate increment amount only if there was a previous bid
+            if (previousBidAmount !== null) {
+                if (bidType === 'AUTO' && userBidMode?.autoIncrementAmount) {
+                    incrementAmount = Number(userBidMode.autoIncrementAmount);
+                } else if (bidType === 'MANUAL') {
+                    // For manual bids, calculate the actual increment from previous bid
+                    incrementAmount = actualBidAmount - previousBidAmount;
+                }
+            }
+            // If previousBidAmount is null (first bid), incrementAmount should also be null
+
             // Create new bid
             const newBidData = {
                 productId: productObjectId,
                 bidderId: bidderObjectId,
                 bidAmount: actualBidAmount,
+                currentBidAmount: actualBidAmount, // Same as bidAmount but more explicit
+                previousBidAmount: previousBidAmount,
+                incrementAmount: incrementAmount,
                 bidTime,
                 isWinningBid: true, // This will be the new winning bid
                 bidStatus: BidStatus.ACTIVE,
@@ -171,30 +232,19 @@ export class BidService {
     }
 
 
-    // Helper method to combine date and time
-    private combineDateTime(date: Date, time: Date): Date {
-        if (!date || !time) return date || time;
-
-        const combined = new Date(date);
-        const timeDate = new Date(time);
-
-        combined.setHours(timeDate.getHours());
-        combined.setMinutes(timeDate.getMinutes());
-        combined.setSeconds(timeDate.getSeconds());
-        combined.setMilliseconds(timeDate.getMilliseconds());
-
-        return combined;
-    }
-
-
     // Get All Bids by Product ID
-    async getAllBidsByProductId(productId: string) {
+    async getAllBidsByProductId(productId: string, userId: string, userRole: string) {
         try {
 
             const product = await this.productRepositoryService.findProductById(productId);
 
             if (!product) {
                 throw new BadRequestException('Product not found');
+            }
+
+            // Check if farmer is the owner of the product
+            if (userRole === 'FARMER' && product.farmerId.toString() !== userId) {
+                throw new ForbiddenException('You can only view bids for your own products');
             }
 
             const bids = await this.bidRepositoryService.findBidsByProductId({
@@ -215,27 +265,20 @@ export class BidService {
                         }
                     }
 
-                    // Calculate based on immediate previous bid in auction
-                    const previousBidAmount = index === 0
-                        ? (product.startingPrice || 0)
-                        : sortedBids[index - 1].bidAmount;
-
-                    const incrementAmount = bid.bidAmount - previousBidAmount;
-
                     return {
                         bidId: bid._id.toString(),
                         productId: bid.productId.toString(),
                         bidderId: bid.bidderId.toString(),
                         bidderName,
                         bidderInitials: bidderName ? bidderName.split(' ').map(n => n[0]).join('').toUpperCase() : 'UN',
-                        currentBidAmount: bid.bidAmount,
-                        previousBidAmount,
-                        incrementAmount,
+                        currentBidAmount: bid.currentBidAmount,
+                        previousBidAmount: bid.previousBidAmount,
+                        incrementAmount: bid.incrementAmount,
                         bidTime: bid.bidTime,
                         timeAgo: this.getTimeAgo(bid.bidTime), // Helper method for "2 min ago"
                         isWinningBid: bid.isWinningBid,
                         bidStatus: bid.bidStatus,
-                        bidType: bid.bidType || 'MANUAL',
+                        bidType: bid.bidType,
                     };
                 })
             );
@@ -258,6 +301,7 @@ export class BidService {
             throw new BadRequestException(`Failed to get bids: ${error.message}`);
         }
     }
+
 
     // Helper method to calculate time ago
     private getTimeAgo(bidTime: Date): string {

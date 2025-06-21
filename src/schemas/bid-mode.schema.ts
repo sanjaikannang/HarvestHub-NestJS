@@ -22,5 +22,3 @@ export class BidMode {
 }
 
 export const BidModeSchema = SchemaFactory.createForClass(BidMode);
-
-BidModeSchema.index({ userId: 1, productId: 1 }, { unique: true });
