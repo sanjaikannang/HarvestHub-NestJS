@@ -157,11 +157,30 @@ export class BidService {
                 throw new BadRequestException(`Bid amount must be at least the starting price of ${product.startingPrice}`);
             }
 
+            // Calculate previousBidAmount and incrementAmount correctly
+            // previousBidAmount should be the actual previous highest bid, not starting price
+            const previousBidAmount = product.currentHighestBid || null;
+            let incrementAmount: number | null = null;
+
+            // Calculate increment amount only if there was a previous bid
+            if (previousBidAmount !== null) {
+                if (bidType === 'AUTO' && userBidMode?.autoIncrementAmount) {
+                    incrementAmount = Number(userBidMode.autoIncrementAmount);
+                } else if (bidType === 'MANUAL') {
+                    // For manual bids, calculate the actual increment from previous bid
+                    incrementAmount = actualBidAmount - previousBidAmount;
+                }
+            }
+            // If previousBidAmount is null (first bid), incrementAmount should also be null
+
             // Create new bid
             const newBidData = {
                 productId: productObjectId,
                 bidderId: bidderObjectId,
                 bidAmount: actualBidAmount,
+                currentBidAmount: actualBidAmount, // Same as bidAmount but more explicit
+                previousBidAmount: previousBidAmount,
+                incrementAmount: incrementAmount,
                 bidTime,
                 isWinningBid: true, // This will be the new winning bid
                 bidStatus: BidStatus.ACTIVE,
@@ -246,37 +265,20 @@ export class BidService {
                         }
                     }
 
-                    // For first bid, previousBidAmount is null
-                    // For subsequent bids, get the actual previous bid amount
-                    let previousBidAmount: number | null = null;
-                    if (index > 0) {
-                        previousBidAmount = sortedBids[index - 1].bidAmount;
-                    }
-
-                    // Handle incrementAmount based on bidType
-                    let incrementAmount: number | null = null;
-                    if (bid.bidType === 'AUTO' && bid.incrementAmount !== undefined) {
-                        // Get incrementAmount from DB for AUTO bids
-                        incrementAmount = bid.incrementAmount;
-                    } else if (bid.bidType === 'MANUAL') {
-                        // Set to null for MANUAL bids
-                        incrementAmount = null;
-                    }
-
                     return {
                         bidId: bid._id.toString(),
                         productId: bid.productId.toString(),
                         bidderId: bid.bidderId.toString(),
                         bidderName,
                         bidderInitials: bidderName ? bidderName.split(' ').map(n => n[0]).join('').toUpperCase() : 'UN',
-                        currentBidAmount: bid.bidAmount,
-                        previousBidAmount,
-                        incrementAmount,
+                        currentBidAmount: bid.currentBidAmount,
+                        previousBidAmount: bid.previousBidAmount,
+                        incrementAmount: bid.incrementAmount,
                         bidTime: bid.bidTime,
                         timeAgo: this.getTimeAgo(bid.bidTime), // Helper method for "2 min ago"
                         isWinningBid: bid.isWinningBid,
                         bidStatus: bid.bidStatus,
-                        bidType: bid.bidType || 'MANUAL',
+                        bidType: bid.bidType,
                     };
                 })
             );
