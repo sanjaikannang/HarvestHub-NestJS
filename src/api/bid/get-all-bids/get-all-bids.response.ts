@@ -8,8 +8,8 @@ export class BidDisplayInfo {
 
     // Amount information for UI display
     currentBidAmount: number;     // ₹95,000 (current bid)
-    previousBidAmount: number;    // ₹90,000 (previous bid)
-    incrementAmount: number;      // ₹5,000 (increase from previous)
+    previousBidAmount: number | null;    // ₹90,000 (previous bid)
+    incrementAmount: number | null;      // ₹5,000 (increase from previous)
 
     // Time information
     bidTime: Date;
@@ -18,6 +18,7 @@ export class BidDisplayInfo {
     // Status information
     isWinningBid: boolean;
     bidStatus: string;
+    bidType: string;
 
 }
 
