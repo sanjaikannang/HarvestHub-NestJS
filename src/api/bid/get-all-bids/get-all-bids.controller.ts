@@ -1,8 +1,7 @@
-import { Controller, Get, Param, Query, UseGuards } from "@nestjs/common";
+import { Controller, Get, Param, UseGuards } from "@nestjs/common";
 import { JwtAuthGuard } from "src/guards/jwt-auth.guard";
 import { UserRole } from "src/utils/enum";
 import { Roles } from "src/utils/roles.decorator";
-import { GetAllBidsRequest } from "./get-all-bids.request";
 import { GetAllBidsResponse } from "./get-all-bids.response";
 import { BidService } from "src/services/bid-service/bid.service";
 

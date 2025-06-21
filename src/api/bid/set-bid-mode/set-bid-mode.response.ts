@@ -7,8 +7,6 @@ export class SetBidModeResponse {
         productId: string;
         bidMode: string;
         autoIncrementAmount?: number;
-        createdAt: Date;
-        updatedAt: Date;
     };
 
 }

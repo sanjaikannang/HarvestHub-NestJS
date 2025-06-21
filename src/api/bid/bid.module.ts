@@ -15,12 +15,14 @@ import { BidModeService } from 'src/services/bid-mode-service/bid-mode.service';
 import { SetBidModeController } from './set-bid-mode/set-bid-mode.controller';
 import { GetBidModeController } from './get-bid-mode/get-bid-mode.controller';
 import { BidModeRepositoryService } from 'src/repositories/bid-mode-repository/bid-mode-repository';
+import { BidMode, BidModeSchema } from 'src/schemas/bid-mode.schema';
 
 @Module({
     imports: [
         MongooseModule.forFeature([{ name: Bid.name, schema: BidSchema }]),
         MongooseModule.forFeature([{ name: Product.name, schema: ProductSchema }]),
-        MongooseModule.forFeature([{ name: User.name, schema: UserSchema }])
+        MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
+        MongooseModule.forFeature([{ name: BidMode.name, schema: BidModeSchema }])
     ],
     controllers: [
         GetAllBidsController,
