@@ -16,9 +16,11 @@ export class BidMode {
     @Prop({ type: String, enum: BidModeStatus, default: BidModeStatus.MANUAL })
     bidMode: BidModeStatus;
 
-    @Prop({ type: Number, required: true })
-    autoIncrementAmount: Number
+    @Prop({ type: Number, required: false })
+    autoIncrementAmount?: Number
 
 }
 
 export const BidModeSchema = SchemaFactory.createForClass(BidMode);
+
+BidModeSchema.index({ userId: 1, productId: 1 }, { unique: true });
