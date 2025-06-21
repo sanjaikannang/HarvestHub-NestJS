@@ -4,9 +4,8 @@ import { ProductRepositoryService } from "src/repositories/product-repository/pr
 import { BidStatus, ProductStatus } from "src/utils/enum";
 import { Types } from 'mongoose';
 import { PlaceBidResponse } from "src/api/bid/place-bid/place-bid.response";
-import { GetAllBidsResponse } from "src/api/bid/get-all-bids/get-all-bids.response";
 import { UserRepositoryService } from "src/repositories/user-repository/user.repository";
-import { GetAllBidsRequest } from "src/api/bid/get-all-bids/get-all-bids.request";
+import { BidModeRepositoryService } from "src/repositories/bid-mode-repository/bid-mode-repository";
 
 @Injectable()
 export class BidService {
@@ -14,7 +13,8 @@ export class BidService {
     constructor(
         private readonly productRepositoryService: ProductRepositoryService,
         private readonly bidRepositoryService: BidRepositoryService,
-        private readonly userRepositoryService: UserRepositoryService
+        private readonly userRepositoryService: UserRepositoryService,
+        private readonly bidModeRepositoryService: BidModeRepositoryService
     ) { }
 
 
@@ -22,7 +22,7 @@ export class BidService {
     async placeBid(params: {
         productId: string,
         bidderId: string,
-        bidAmount: number,
+        bidAmount?: number,
         bidTime: Date
     }) {
         try {
@@ -62,11 +62,35 @@ export class BidService {
                 throw new BadRequestException('You cannot bid on your own product');
             }
 
+            // Get user's bid mode for this product
+            // const userBidMode = await this.bidModeRepositoryService.findBidMode({
+            //     userId: bidderObjectId,
+            //     productId: productObjectId
+            // });
+
+            // Determine the actual bid amount based on user's bid mode
+            let actualBidAmount: number;
+            let bidType: string = 'MANUAL'; // Default
+
+            // if (bidAmount) {
+            //     // Manual override - user provided specific amount
+            //     actualBidAmount = bidAmount;
+            //     bidType = 'MANUAL';
+            // } else if (userBidMode && userBidMode.bidMode === 'AUTO') {
+            //     // Automatic bidding
+            //     const currentHighestBid = product.currentHighestBid || product.startingPrice || 0;
+            //     actualBidAmount = currentHighestBid + (userBidMode.autoIncrementAmount || 1);
+            //     bidType = 'AUTO';
+            // } else {
+            //     // No bid amount provided and no auto mode set
+            //     throw new BadRequestException('Bid amount is required for manual bidding or set up automatic bidding first');
+            // }
+
             // Check if bid amount is higher than current highest bid
-            const minimumBid = product.currentHighestBid ? product.currentHighestBid + 1 : product.startingPrice;
-            if (bidAmount < minimumBid) {
-                throw new BadRequestException('Bid amount must be at least $' + minimumBid);
-            }
+            // const minimumBid = product.currentHighestBid ? product.currentHighestBid + 1 : product.startingPrice;
+            // if (bidAmount < minimumBid) {
+            //     throw new BadRequestException('Bid amount must be at least $' + minimumBid);
+            // }
 
             // Check if user already has the highest bid
             if (product.currentHighestBidderId &&
@@ -82,9 +106,10 @@ export class BidService {
                 bidTime,
                 isWinningBid: true, // This will be the new winning bid
                 bidStatus: BidStatus.ACTIVE,
+                bidType: bidType,
             };
 
-            const createdBid = await this.bidRepositoryService.createBid(newBidData);
+           // const createdBid = await this.bidRepositoryService.createBid(newBidData);
 
             // Update previous winning bid (if any)
             if (product.currentHighestBidderId) {
@@ -101,16 +126,16 @@ export class BidService {
             });
 
             const response: PlaceBidResponse = {
-                message: "Product created successfully",
-                bid: {
-                    bidId: (createdBid._id as Types.ObjectId).toString(),
-                    productId: createdBid.productId.toString(),
-                    bidderId: createdBid.bidderId.toString(),
-                    bidAmount: createdBid.bidAmount,
-                    bidTime: createdBid.bidTime,
-                    isWinningBid: createdBid.isWinningBid,
-                    bidStatus: createdBid.bidStatus,
-                }
+                message: `Bid placed successfully using ${bidType.toLowerCase()} bidding`,
+                // bid: {
+                //     bidId: (createdBid._id as Types.ObjectId).toString(),
+                //     productId: createdBid.productId.toString(),
+                //     bidderId: createdBid.bidderId.toString(),
+                //     bidAmount: createdBid.bidAmount,
+                //     bidTime: createdBid.bidTime,
+                //     isWinningBid: createdBid.isWinningBid,
+                //     bidStatus: createdBid.bidStatus,
+                // }
             }
 
             return response;
@@ -139,89 +164,90 @@ export class BidService {
 
 
     // Get All Bids by Product ID
-    async getAllBidsByProductId(productId: string, queryParams: GetAllBidsRequest = {}) {
+    async getAllBidsByProductId(productId: string) {
         try {
-            // Validate product exists
+
             const product = await this.productRepositoryService.findProductById(productId);
+
             if (!product) {
                 throw new BadRequestException('Product not found');
             }
 
-            // Set default pagination values
-            const page = queryParams.page || 1;
-            const limit = queryParams.limit || 10;
-            const sortBy = queryParams.sortBy || 'bidTime';
-            const sortOrder = queryParams.sortOrder || 'desc';
-            const bidStatus = queryParams.bidStatus;
+            const bids = await this.bidRepositoryService.findBidsByProductId({
+                productId: new Types.ObjectId(productId)
+            });
 
-            // Build filter object
-            const filter: any = { productId: new Types.ObjectId(productId) };
-            if (bidStatus) {
-                filter.bidStatus = bidStatus;
-            }
+            const sortedBids = bids.sort((a, b) => new Date(a.bidTime).getTime() - new Date(b.bidTime).getTime());
 
-            // Build sort object
-            const sort: any = {};
-            sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
-
-            // Get bids with pagination
-            const { bids, totalCount } = await this.bidRepositoryService.findBidsByProductIdWithPagination(
-                filter,
-                page,
-                limit,
-                sort
-            );
-
-            // Calculate pagination info
-            const totalPages = Math.ceil(totalCount / limit);
-            const hasNext = page < totalPages;
-            const hasPrevious = page > 1;
-
-            // Format response
             const formattedBids = await Promise.all(
-                bids.map(async (bid: any) => {
-                    // Optional: Get bidder details
+                sortedBids.map(async (bid: any, index: number) => {
                     let bidderName: string | undefined = undefined;
                     if (this.userRepositoryService) {
                         try {
                             const bidder = await this.userRepositoryService.findById(bid.bidderId.toString());
                             bidderName = bidder?.name || undefined;
                         } catch (error) {
-                            // Handle error silently, bidderName will remain undefined
+                            // Ignore errors
                         }
                     }
 
+                    // Calculate based on immediate previous bid in auction
+                    const previousBidAmount = index === 0
+                        ? (product.startingPrice || 0)
+                        : sortedBids[index - 1].bidAmount;
+
+                    const incrementAmount = bid.bidAmount - previousBidAmount;
+
                     return {
-                        bidId: (bid._id as any).toString(),
+                        bidId: bid._id.toString(),
                         productId: bid.productId.toString(),
                         bidderId: bid.bidderId.toString(),
                         bidderName,
-                        bidAmount: bid.bidAmount,
+                        bidderInitials: bidderName ? bidderName.split(' ').map(n => n[0]).join('').toUpperCase() : 'UN',
+                        currentBidAmount: bid.bidAmount,
+                        previousBidAmount,
+                        incrementAmount,
                         bidTime: bid.bidTime,
+                        timeAgo: this.getTimeAgo(bid.bidTime), // Helper method for "2 min ago"
                         isWinningBid: bid.isWinningBid,
                         bidStatus: bid.bidStatus,
                     };
                 })
             );
 
-            const response: GetAllBidsResponse = {
-                message: bids.length > 0 ? 'Bids retrieved successfully' : 'No bids found for this product',
-                bids: formattedBids,
-                pagination: {
-                    currentPage: page,
-                    totalPages,
-                    totalBids: totalCount,
-                    hasNext,
-                    hasPrevious,
-                }
-            };
+            const reversedBids = formattedBids.reverse();
 
-            return response;
+            return {
+                message: formattedBids.length > 0 ? 'Bids retrieved successfully' : 'No bids found for this product',
+                totalBids: formattedBids.length,
+                highestBid: formattedBids.length > 0 ? reversedBids[0].currentBidAmount : 0,
+                startingPrice: product.startingPrice || 0,
+                bids: reversedBids
+            };
 
         } catch (error) {
             console.error('Error getting bids:', error);
             throw new BadRequestException(`Failed to get bids. ${error.message}`);
         }
+    }
+
+    // Helper method to calculate time ago
+    private getTimeAgo(bidTime: Date): string {
+        const now = new Date();
+        const diffInMs = now.getTime() - new Date(bidTime).getTime();
+        const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+
+        if (diffInMinutes < 1) return 'Just now';
+        if (diffInMinutes === 1) return '1 min ago';
+        if (diffInMinutes < 60) return `${diffInMinutes} min ago`;
+
+        const diffInHours = Math.floor(diffInMinutes / 60);
+        if (diffInHours === 1) return '1 hour ago';
+        if (diffInHours < 24) return `${diffInHours} hours ago`;
+
+        const diffInDays = Math.floor(diffInHours / 24);
+        if (diffInDays === 1) return '1 day ago';
+        return `${diffInDays} days ago`;
     }
 
 }

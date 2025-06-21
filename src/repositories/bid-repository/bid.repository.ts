@@ -91,4 +91,13 @@ export class BidRepositoryService {
     }
 
 
+    // Find all bids by product ID
+    async findBidsByProductId(filter: any) {
+
+        const bids = await this.bidModel.find(filter).exec();
+
+        return bids;
+    }
+
+
 }

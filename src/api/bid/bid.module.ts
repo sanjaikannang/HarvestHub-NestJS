@@ -11,6 +11,10 @@ import { UserService } from 'src/services/user-service/user.service';
 import { User, UserSchema } from 'src/schemas/user.schema';
 import { GetAllBidsController } from './get-all-bids/get-all-bids.controller';
 import { PlaceBidController } from './place-bid/place-bid.controller';
+import { BidModeService } from 'src/services/bid-mode-service/bid-mode.service';
+import { SetBidModeController } from './set-bid-mode/set-bid-mode.controller';
+import { GetBidModeController } from './get-bid-mode/get-bid-mode.controller';
+import { BidModeRepositoryService } from 'src/repositories/bid-mode-repository/bid-mode-repository';
 
 @Module({
     imports: [
@@ -19,6 +23,10 @@ import { PlaceBidController } from './place-bid/place-bid.controller';
         MongooseModule.forFeature([{ name: User.name, schema: UserSchema }])
     ],
     controllers: [
+        GetAllBidsController,
+        PlaceBidController,
+        SetBidModeController,
+        GetBidModeController
     ],
     providers: [
         ConfigService,
@@ -27,8 +35,8 @@ import { PlaceBidController } from './place-bid/place-bid.controller';
         BidRepositoryService,
         ProductRepositoryService,
         UserRepositoryService,
-        GetAllBidsController,
-        PlaceBidController
+        BidModeService,
+        BidModeRepositoryService
     ],
     exports: [
         ConfigService,
@@ -37,8 +45,8 @@ import { PlaceBidController } from './place-bid/place-bid.controller';
         BidRepositoryService,
         ProductRepositoryService,
         UserRepositoryService,
-        GetAllBidsController,
-        PlaceBidController
+        BidModeService,
+        BidModeRepositoryService
     ],
 })
 
