@@ -45,7 +45,13 @@ export class BidService {
             }
 
             // Check if auction is active (combining date and time checks)
-            const now = new Date();
+            // const now = new Date();
+
+            // Convert current UTC time to IST for comparison
+            const nowUTC = new Date();
+            const istOffset = 5.5 * 60 * 60 * 1000; // 5.5 hours in milliseconds
+            const now = new Date(nowUTC.getTime() + istOffset);
+
             const auctionStart = new Date(product.bidStartTime);
             const auctionEnd = new Date(product.bidEndTime);
 
@@ -54,7 +60,7 @@ export class BidService {
                 throw new BadRequestException('Invalid auction timing configuration');
             }
 
-            console.log('Current time:', now.toISOString());
+            console.log('Current time (IST):', now.toISOString());
             console.log('Auction start:', auctionStart.toISOString());
             console.log('Auction end:', auctionEnd.toISOString());
 
