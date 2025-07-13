@@ -35,12 +35,20 @@ export class PlaceBidController {
             throw new Error('User Role not found in request');
         }
 
+        // Convert current time to IST (UTC + 5:30)
+        const currentTimeUTC = new Date();
+        console.log('Current Time in UTC:', currentTimeUTC);
+        const istOffset = 5.5 * 60 * 60 * 1000; // 5.5 hours in milliseconds
+        console.log('IST Offset in milliseconds:', istOffset);
+        const currentTimeIST = new Date(currentTimeUTC.getTime() + istOffset);
+        console.log('Current Time in IST:', currentTimeIST);
+
         // Call the service method with proper parameters
         const result = await this.bidService.placeBid({
-            productId: productId, // Use productId from URL params
+            productId: productId,
             bidderId: userId,
             bidAmount: placeBidRequest.bidAmount,
-            bidTime: new Date()
+            bidTime: currentTimeIST
         });
 
         return result;
